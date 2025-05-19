@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="login-container">
+    <div class="login-card">
+        <div class="login-header">
+            <h2><i class="fas fa-wallet me-2"></i>Finance Tracker</h2>
+            <p class="text-muted">Welcome back! Please login to your account.</p>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category if category != 'message' else 'danger' }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" id="loginForm" class="login-form">
+            <div class="form-floating mb-3">
+                <input type="text" class="form-control" id="username" name="username" placeholder="Username" required>
+                <label for="username"><i class="fas fa-user me-2"></i>Username</label>
+                <div class="invalid-feedback">Please enter your username.</div>
+            </div>
+
+            <div class="form-floating mb-4">
+                <input type="password" class="form-control" id="password" name="password" placeholder="Password" required>
+                <label for="password"><i class="fas fa-lock me-2"></i>Password</label>
+                <div class="invalid-feedback">Please enter your password.</div>
+            </div>
+
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary btn-lg login-btn" id="loginButton">
+                    <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                    <span class="btn-text">Login</span>
+                </button>
+            </div>
+
+            <div class="text-center mt-3">
+                <a href="{{ url_for('forgot_password') }}" class="forgot-password-link">
+                    <i class="fas fa-key me-1"></i>Forgot Password?
+                </a>
+            </div>
+        </form>
+
+        <div class="register-link text-center mt-4">
+            <p class="mb-0">Don't have an account? 
+                <a href="{{ url_for('register') }}" class="register-btn">
+                    <i class="fas fa-user-plus me-1"></i>Register
+                </a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<style>
+.login-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    padding: 20px;
+}
+
+.login-card {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+    padding: 2rem;
+    width: 100%;
+    max-width: 400px;
+    animation: slideUp 0.5s ease-out;
+}
+
+.login-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.login-header h2 {
+    color: #2c3e50;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.form-floating > .form-control {
+    padding: 1rem 0.75rem;
+    height: calc(3.5rem + 2px);
+    line-height: 1.25;
+}
+
+.form-floating > label {
+    padding: 1rem 0.75rem;
+}
+
+.login-btn {
+    background: linear-gradient(135deg, #00b4db, #0083b0);
+    border: none;
+    padding: 0.8rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.login-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 180, 219, 0.3);
+}
+
+.forgot-password-link {
+    color: #6c757d;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.forgot-password-link:hover {
+    color: #0083b0;
+}
+
+.register-btn {
+    color: #0083b0;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.register-btn:hover {
+    color: #00b4db;
+}
+
+.alert {
+    border-radius: 10px;
+    margin-bottom: 1.5rem;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Loading state styles */
+.login-btn.loading .spinner-border {
+    display: inline-block !important;
+}
+
+.login-btn.loading .btn-text {
+    display: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 576px) {
+    .login-card {
+        padding: 1.5rem;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('loginForm');
+    const loginButton = document.getElementById('loginButton');
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Add loading state
+        loginButton.classList.add('loading');
+        
+        // Validate form
+        if (form.checkValidity()) {
+            // Submit form
+            form.submit();
+        } else {
+            // Remove loading state if validation fails
+            loginButton.classList.remove('loading');
+            form.classList.add('was-validated');
+        }
+    });
+
+    // Auto-hide alerts after 5 seconds
+    const alerts = document.querySelectorAll('.alert');
+    alerts.forEach(alert => {
+        setTimeout(() => {
+            const bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
+        }, 5000);
+    });
+});
+</script>
+{% endblock %}

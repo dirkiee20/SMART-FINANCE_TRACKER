@@ -1,0 +1,1014 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container-fluid dashboard-container">
+    <!-- AI Assistant Button with enhanced animation -->
+    <div class="ai-assistant-button pulse-animation" onclick="toggleAIChat()">
+        <i class="fas fa-robot"></i>
+    </div>
+
+    <!-- AI Chat Modal with slide animation -->
+    <div class="ai-chat-modal slide-in" id="aiChatModal">
+        <div class="ai-chat-header">
+            <h5><i class="fas fa-robot me-2"></i>AI Financial Assistant</h5>
+            <button onclick="toggleAIChat()" class="close-btn">&times;</button>
+        </div>
+        <div class="ai-chat-body" id="aiChatBody">
+            <!-- Chat messages will appear here -->
+        </div>
+        <div class="ai-chat-input">
+            <input type="text" id="aiQuery" placeholder="Ask about your finances...">
+            <button onclick="sendAIQuery()" class="send-btn"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <!-- Budget Status Alert with fade animation -->
+    <div class="row mb-4">
+        <div class="col-12">
+            {% if budget_status %}
+            <div class="alert alert-{{ budget_status.type }} alert-dismissible fade show slide-in" role="alert">
+                <i class="fas fa-{{ budget_status.icon }} me-2"></i>
+                <strong>{{ budget_status.title }}:</strong> {{ budget_status.message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Summary Cards with dynamic colors -->
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card glass-effect hover-card">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-wallet me-2"></i>Total Balance</h5>
+                    <h2 class="card-text counter-animation {% if savings > 0 %}text-success{% elif savings < 0 %}text-danger{% else %}text-primary{% endif %}">
+                        ${{ "%.2f"|format(savings) }}
+                    </h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <div class="card glass-effect hover-card">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-arrow-down me-2 text-danger"></i>Biggest Expense</h5>
+                    {% if biggest_expense %}
+                    <p class="expense-text text-danger">
+                        {{ biggest_expense.category }}: ${{ "%.2f"|format(biggest_expense.amount) }}
+                    </p>
+                    {% else %}
+                    <p>No expenses recorded</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <div class="card glass-effect hover-card">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-arrow-up me-2 text-success"></i>Highest Income</h5>
+                    {% if highest_income %}
+                    <p class="income-text text-success">
+                        {{ highest_income.category }}: ${{ "%.2f"|format(highest_income.amount) }}
+                    </p>
+                    {% else %}
+                    <p>No income recorded</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Insights with modern styling -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card glass-effect">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-brain me-2"></i>AI Insights
+                    </h5>
+                    <div class="ai-insights">
+                        {% for insight in ai_insights %}
+                        <div class="insight-item hover-effect">
+                            <i class="fas fa-{{ insight.icon }} insight-icon"></i>
+                            <p>{{ insight.message }}</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts with daily data -->
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card glass-effect h-100">
+                <div class="card-body">
+                    <h5 class="card-title d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-chart-line me-2"></i>Daily Income vs Expenses</span>
+                        <button class="btn btn-sm btn-outline-primary hover-effect" onclick="openFullscreen('trendChart')">
+                            <i class="fas fa-expand"></i>
+                        </button>
+                    </h5>
+                    <div class="chart-container">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="card glass-effect h-100">
+                <div class="card-body">
+                    <h5 class="card-title d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-chart-pie me-2"></i>Today's Spending by Category</span>
+                        <button class="btn btn-sm btn-outline-primary hover-effect" onclick="openFullscreen('categoryChart')">
+                            <i class="fas fa-expand"></i>
+                        </button>
+                    </h5>
+                    <div class="chart-container">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Savings Goals Progress with enhanced styling -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card glass-effect">
+                <div class="card-body">
+                    <h5 class="card-title d-flex align-items-center">
+                        <i class="fas fa-piggy-bank me-2"></i>Savings Goals
+                        <span class="ms-auto">
+                            <a href="{{ url_for('goals') }}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-plus"></i>
+                            </a>
+                        </span>
+                    </h5>
+                    <div class="goals-container-horizontal">
+                        {% for goal in savings_goals %}
+                        <div class="goal-card-compact">
+                            <div class="goal-info-compact">
+                                <h6 class="goal-name mb-1">{{ goal.name }}</h6>
+                                <div class="goal-amount-compact">
+                                    <span class="current-amount">${{ "%.2f"|format(goal.current_amount) }}</span>
+                                    <span class="target-amount">/ ${{ "%.2f"|format(goal.target_amount) }}</span>
+                                </div>
+                                <div class="progress-container-compact">
+                                    <div class="progress">
+                                        <div class="progress-bar {% if (goal.current_amount / goal.target_amount * 100)|round >= 100 %}bg-success{% else %}bg-primary{% endif %} progress-bar-striped progress-bar-animated" 
+                                             role="progressbar" 
+                                             style="width: {{ (goal.current_amount / goal.target_amount * 100)|round }}%">
+                                        </div>
+                                    </div>
+                                    <div class="progress-stats-compact">
+                                        <span class="progress-percentage">{{ (goal.current_amount / goal.target_amount * 100)|round }}%</span>
+                                        <span class="remaining-amount">
+                                            {% set remaining = goal.target_amount - goal.current_amount %}
+                                            {% if remaining > 0 %}
+                                            ${{ "%.2f"|format(remaining) }} left
+                                            {% else %}
+                                            <i class="fas fa-check-circle"></i>
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                </div>
+                                <small class="text-muted">{{ goal.target_date.strftime('%b %Y') }}</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Transactions with modern table styling -->
+    <div class="row">
+        <div class="col-md-12 mb-4">
+            <div class="card glass-effect">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-history me-2"></i>Recent Transactions</h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Category</th>
+                                    <th>Amount</th>
+                                    <th>Type</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for transaction in transactions %}
+                                <tr class="hover-effect">
+                                    <td>{{ transaction.date.strftime('%Y-%m-%d') }}</td>
+                                    <td>{{ transaction.category }}</td>
+                                    <td>${{ "%.2f"|format(transaction.amount) }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if transaction.type == 'income' else 'danger' }} badge-pill">
+                                            {{ transaction.type }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Fullscreen Modal -->
+<div class="modal fade" id="fullscreenChartModal" tabindex="-1" aria-labelledby="fullscreenChartModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="fullscreenChartModalLabel">Detailed View</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row h-100">
+                    <div class="col-md-8 h-100">
+                        <div class="chart-container" style="width: 100%; height: 80vh;">
+                            <canvas id="fullscreenChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="col-md-4 h-100">
+                        <div class="card glass-effect h-100">
+                            <div class="card-body">
+                                <h5 class="card-title mb-4">
+                                    <i class="fas fa-brain me-2"></i>Chart Insights
+                                </h5>
+                                <div id="chartInsights" class="insights-container">
+                                    <!-- Insights will be dynamically added here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Enhanced CSS -->
+<style>
+.dashboard-container {
+    padding: 20px;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
+}
+
+.glass-effect {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.hover-card {
+    transition: all 0.3s ease;
+}
+
+.hover-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+.hover-effect {
+    transition: all 0.3s ease;
+}
+
+.hover-effect:hover {
+    transform: translateX(5px);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.pulse-animation {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+}
+
+.slide-in {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.counter-animation {
+    animation: countUp 2s ease-out;
+}
+
+@keyframes countUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.chart-container {
+    position: relative;
+    height: 300px;
+    transition: all 0.3s ease;
+}
+
+.chart-container:hover {
+    transform: scale(1.02);
+}
+
+.insight-icon {
+    font-size: 1.2em;
+    color: #00b4db;
+    transition: all 0.3s ease;
+}
+
+.insight-item:hover .insight-icon {
+    transform: scale(1.2);
+}
+
+.badge-pill {
+    padding: 8px 15px;
+    border-radius: 20px;
+    transition: all 0.3s ease;
+}
+
+.badge-pill:hover {
+    transform: scale(1.1);
+}
+
+.table-hover tbody tr {
+    transition: all 0.3s ease;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 180, 219, 0.1);
+}
+
+.send-btn {
+    background: linear-gradient(135deg, #00b4db, #0083b0);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 35px;
+    height: 35px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.send-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 180, 219, 0.3);
+}
+
+.progress-bar-striped {
+    background-image: linear-gradient(45deg, rgba(255,255,255,.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,.15) 50%, rgba(255,255,255,.15) 75%, transparent 75%, transparent);
+    background-size: 1rem 1rem;
+}
+
+.progress-bar-animated {
+    animation: progress-bar-stripes 1s linear infinite;
+}
+
+@keyframes progress-bar-stripes {
+    from { background-position: 1rem 0; }
+    to { background-position: 0 0; }
+}
+
+/* Floating AI Assistant Button */
+.ai-assistant-button {
+    position: fixed;
+    bottom: 35px;
+    right: 35px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #00b4db, #0083b0);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transition: all 0.3s ease;
+    z-index: 1050;
+    animation: float 3s ease-in-out infinite;
+}
+
+.ai-assistant-button i {
+    font-size: 20px;
+    transition: transform 0.3s ease;
+}
+
+.ai-assistant-button:hover {
+    transform: translateY(-5px) scale(1.1);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+}
+
+.ai-assistant-button:hover i {
+    transform: rotate(15deg);
+}
+
+@keyframes float {
+    0% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+    100% {
+        transform: translateY(0px);
+    }
+}
+
+/* Enhanced AI Chat Modal */
+.ai-chat-modal {
+    display: none;
+    position: fixed;
+    bottom: 100px;
+    right: 35px;
+    width: 320px;
+    height: 450px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+    z-index: 1040;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-origin: bottom right;
+    overflow: hidden;
+}
+
+.ai-chat-modal.show {
+    display: block;
+    animation: modalSlideIn 0.3s ease-out forwards;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.8) translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.ai-chat-header {
+    padding: 15px;
+    background: linear-gradient(135deg, #00b4db, #0083b0);
+    color: white;
+    border-radius: 16px 16px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.ai-chat-header h5 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.ai-chat-body {
+    height: 320px;
+    padding: 15px;
+    overflow-y: auto;
+    background: rgba(255, 255, 255, 0.8);
+}
+
+.ai-chat-input {
+    padding: 15px;
+    display: flex;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.9);
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.ai-chat-input input {
+    flex: 1;
+    padding: 10px 15px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 20px;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.ai-chat-input input:focus {
+    outline: none;
+    border-color: #00b4db;
+    box-shadow: 0 0 0 3px rgba(0, 180, 219, 0.1);
+}
+
+.send-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #00b4db, #0083b0);
+    color: white;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.send-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 180, 219, 0.3);
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.3rem;
+    cursor: pointer;
+    padding: 0;
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.close-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: rotate(90deg);
+}
+
+/* Chat Messages Styling */
+.chat-message {
+    margin-bottom: 15px;
+    padding: 12px 16px;
+    border-radius: 15px;
+    max-width: 85%;
+    animation: messageSlideIn 0.3s ease-out;
+}
+
+.user-message {
+    background: #e3f2fd;
+    margin-left: auto;
+    border-bottom-right-radius: 5px;
+}
+
+.ai-message {
+    background: #f5f5f5;
+    margin-right: auto;
+    border-bottom-left-radius: 5px;
+}
+
+@keyframes messageSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .ai-assistant-button {
+        bottom: 20px;
+        right: 20px;
+        width: 45px;
+        height: 45px;
+    }
+
+    .ai-chat-modal {
+        bottom: 80px;
+        right: 20px;
+        width: calc(100% - 40px);
+        max-width: 320px;
+        height: 400px;
+    }
+
+    .ai-chat-body {
+        height: 280px;
+    }
+}
+
+.text-success {
+    color: #28a745 !important;
+}
+
+.text-danger {
+    color: #dc3545 !important;
+}
+
+.text-primary {
+    color: #007bff !important;
+}
+
+.expense-text {
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+.income-text {
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+/* Modern Goals Styling */
+.goals-container-horizontal {
+    display: flex;
+    overflow-x: auto;
+    gap: 1rem;
+    padding: 0.5rem 0;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+.goals-container-horizontal::-webkit-scrollbar {
+    height: 6px;
+}
+
+.goals-container-horizontal::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.goals-container-horizontal::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+}
+
+.goal-card-compact {
+    min-width: 250px;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 8px;
+    padding: 1rem;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+}
+
+.goal-card-compact:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.9);
+}
+
+.goal-info-compact {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.goal-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 0;
+}
+
+.goal-amount-compact {
+    display: flex;
+    align-items: baseline;
+    gap: 0.25rem;
+}
+
+.current-amount {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.target-amount {
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+.progress-container-compact {
+    margin: 0.5rem 0;
+}
+
+.progress {
+    height: 4px;
+    border-radius: 2px;
+    background-color: rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    margin-bottom: 0.25rem;
+}
+
+.progress-stats-compact {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.75rem;
+}
+
+.progress-percentage {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.remaining-amount {
+    color: #6c757d;
+}
+
+.remaining-amount i {
+    color: #28a745;
+}
+</style>
+
+<!-- Load Chart.js before your script -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Bootstrap modal
+    const fullscreenModal = new bootstrap.Modal(document.getElementById('fullscreenChartModal'));
+    
+    // Get the data from the template
+    const dailyData = JSON.parse('{{ daily_data|tojson|safe }}');
+    const expenseCategories = JSON.parse('{{ expense_categories|tojson|safe }}');
+    
+    // Prepare data for trend chart
+    const labels = Object.keys(dailyData);
+    const incomeData = labels.map(key => dailyData[key].income || 0);
+    const expenseData = labels.map(key => dailyData[key].expense || 0);
+
+    // Initialize trend chart
+    const trendCtx = document.getElementById('trendChart');
+    if (trendCtx) {
+        new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Daily Income',
+                        data: incomeData,
+                        borderColor: '#28a745',
+                        backgroundColor: 'rgba(40, 167, 69, 0.2)',
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'Daily Expenses',
+                        data: expenseData,
+                        borderColor: '#dc3545',
+                        backgroundColor: 'rgba(220, 53, 69, 0.2)',
+                        tension: 0.4,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { intersect: false, mode: 'index' },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'Amount ($)' }
+                    },
+                    x: {
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 45
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Initialize category chart
+    const categoryCtx = document.getElementById('categoryChart');
+    if (categoryCtx) {
+        const categoryLabels = Object.keys(expenseCategories);
+        const categoryData = Object.values(expenseCategories);
+
+        new Chart(categoryCtx, {
+            type: 'pie',
+            data: {
+                labels: categoryLabels,
+                datasets: [{
+                    data: categoryData,
+                    backgroundColor: [
+                        '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
+                        '#FF9F40', '#8AC24A', '#9C27B0', '#F44336', '#2196F3'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { 
+                        position: 'right',
+                        labels: {
+                            font: {
+                                size: 14
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Fullscreen chart functionality
+    window.openFullscreen = function(chartId) {
+        const fullscreenCanvas = document.getElementById('fullscreenChart');
+        const fullscreenCtx = fullscreenCanvas.getContext('2d');
+        const insightsContainer = document.getElementById('chartInsights');
+        
+        // Get the original chart instance
+        const originalChart = Chart.getChart(chartId);
+        if (!originalChart) return;
+        
+        // Create new chart configuration
+        const config = JSON.parse(JSON.stringify(originalChart.config));
+        
+        // Adjust options for fullscreen
+        config.options.responsive = true;
+        config.options.maintainAspectRatio = false;
+        
+        if (chartId === 'trendChart') {
+            config.options.scales = {
+                y: {
+                    beginAtZero: true,
+                    title: { 
+                        display: true, 
+                        text: 'Amount ($)',
+                        font: { size: 16 }
+                    },
+                    ticks: { font: { size: 14 } }
+                },
+                x: {
+                    ticks: { font: { size: 14 } }
+                }
+            };
+            
+            // Generate insights for trend chart
+            const totalIncome = incomeData.reduce((a, b) => a + b, 0);
+            const totalExpenses = expenseData.reduce((a, b) => a + b, 0);
+            const avgIncome = totalIncome / incomeData.length;
+            const avgExpenses = totalExpenses / expenseData.length;
+            
+            const insights = [
+                {
+                    icon: 'chart-line',
+                    message: `Total Income: $${totalIncome.toFixed(2)}`
+                },
+                {
+                    icon: 'chart-line',
+                    message: `Total Expenses: $${totalExpenses.toFixed(2)}`
+                },
+                {
+                    icon: 'calculator',
+                    message: `Average Daily Income: $${avgIncome.toFixed(2)}`
+                },
+                {
+                    icon: 'calculator',
+                    message: `Average Daily Expenses: $${avgExpenses.toFixed(2)}`
+                },
+                {
+                    icon: 'piggy-bank',
+                    message: `Net Savings: $${(totalIncome - totalExpenses).toFixed(2)}`
+                }
+            ];
+            
+            displayInsights(insights);
+        } else {
+            config.options.plugins = {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        font: { size: 16 }
+                    }
+                }
+            };
+            
+            // Generate insights for category chart
+            const categoryLabels = Object.keys(expenseCategories);
+            const categoryData = Object.values(expenseCategories);
+            
+            const totalSpent = categoryData.reduce((a, b) => a + b, 0);
+            const maxCategory = categoryLabels[categoryData.indexOf(Math.max(...categoryData))];
+            const maxAmount = Math.max(...categoryData);
+            
+            const insights = [
+                {
+                    icon: 'money-bill-wave',
+                    message: `Total Spent: $${totalSpent.toFixed(2)}`
+                },
+                {
+                    icon: 'chart-pie',
+                    message: `Highest Spending: ${maxCategory} ($${maxAmount.toFixed(2)})`
+                },
+                {
+                    icon: 'percentage',
+                    message: `${maxCategory} represents ${((maxAmount/totalSpent)*100).toFixed(1)}% of total spending`
+                }
+            ];
+            
+            displayInsights(insights);
+        }
+        
+        // Create new chart in fullscreen modal
+        new Chart(fullscreenCtx, config);
+        
+        // Show the modal
+        fullscreenModal.show();
+    };
+});
+
+function displayInsights(insights) {
+    const insightsContainer = document.getElementById('chartInsights');
+    insightsContainer.innerHTML = '';
+    
+    insights.forEach(insight => {
+        const insightDiv = document.createElement('div');
+        insightDiv.className = 'insight-item hover-effect mb-3';
+        insightDiv.innerHTML = `
+            <i class="fas fa-${insight.icon} insight-icon me-2"></i>
+            <p class="mb-0">${insight.message}</p>
+        `;
+        insightsContainer.appendChild(insightDiv);
+    });
+}
+
+// AI Chat functionality
+function toggleAIChat() {
+    const modal = document.getElementById('aiChatModal');
+    modal.classList.toggle('show');
+}
+
+function sendAIQuery() {
+    const query = document.getElementById('aiQuery').value;
+    if (!query) return;
+
+    // Add user message to chat
+    addMessage('user', query);
+    document.getElementById('aiQuery').value = '';
+
+    // Send query to backend
+    fetch('/ai_query', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ query: query })
+    })
+    .then(response => response.json())
+    .then(data => {
+        addMessage('assistant', data.response);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        addMessage('assistant', 'Sorry, I encountered an error. Please try again.');
+    });
+}
+
+function addMessage(type, content) {
+    const chatBody = document.getElementById('aiChatBody');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${type}-message`;
+    messageDiv.innerHTML = `<p>${content}</p>`;
+    chatBody.appendChild(messageDiv);
+    chatBody.scrollTop = chatBody.scrollHeight;
+}
+</script>
+{% endblock %}

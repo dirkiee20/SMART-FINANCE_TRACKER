@@ -1,0 +1,492 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container-fluid settings-container">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="settings-header">
+                <h2 class="page-title slide-in">
+                    <i class="fas fa-cog me-2"></i>Settings
+                </h2>
+                <p class="text-muted">Manage your account settings and preferences</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Settings Navigation -->
+        <div class="col-md-3 mb-4">
+            <div class="card glass-effect settings-nav">
+                <div class="card-body p-0">
+                    <div class="nav flex-column nav-pills" id="settings-tab" role="tablist">
+                        <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#profile">
+                            <i class="fas fa-user-circle me-2"></i>Profile
+                        </button>
+                        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#security">
+                            <i class="fas fa-shield-alt me-2"></i>Security
+                        </button>
+                        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#notifications">
+                            <i class="fas fa-bell me-2"></i>Notifications
+                        </button>
+                        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#account">
+                            <i class="fas fa-user-cog me-2"></i>Account
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Content -->
+        <div class="col-md-9">
+            <div class="tab-content">
+                <!-- Profile Settings -->
+                <div class="tab-pane fade show active" id="profile">
+                    <div class="card glass-effect hover-card">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="fas fa-user-circle me-2"></i>Profile Information
+                            </h5>
+                            <form method="POST" action="{{ url_for('settings') }}" class="settings-form">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Username</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                            <input type="text" class="form-control" name="username" value="{{ user.username }}" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Email</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                                            <input type="email" class="form-control" name="email" value="{{ user.email }}" required>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    <button type="submit" class="btn btn-primary hover-effect">
+                                        <i class="fas fa-save me-2"></i>Save Changes
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Security Settings -->
+                <div class="tab-pane fade" id="security">
+                    <div class="card glass-effect hover-card">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="fas fa-shield-alt me-2"></i>Security Settings
+                            </h5>
+                            <form method="POST" action="{{ url_for('settings') }}" class="settings-form">
+                                <div class="row">
+                                    <div class="col-md-12 mb-3">
+                                        <label class="form-label">Current Password</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                            <input type="password" class="form-control" name="current_password" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">New Password</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-key"></i></span>
+                                            <input type="password" class="form-control" name="new_password" required>
+                                        </div>
+                                        <div class="password-strength mt-2"></div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Confirm New Password</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-key"></i></span>
+                                            <input type="password" class="form-control" name="confirm_password" required>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    <button type="submit" class="btn btn-primary hover-effect">
+                                        <i class="fas fa-save me-2"></i>Update Password
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notification Settings -->
+                <div class="tab-pane fade" id="notifications">
+                    <div class="card glass-effect hover-card">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="fas fa-bell me-2"></i>Notification Preferences
+                            </h5>
+                            <form method="POST" action="{{ url_for('settings') }}" class="settings-form">
+                                <div class="notification-options">
+                                    <div class="form-check form-switch mb-3">
+                                        <input class="form-check-input" type="checkbox" id="emailNotifications" name="email_notifications" 
+                                               {% if user.email_notifications %}checked{% endif %}>
+                                        <label class="form-check-label" for="emailNotifications">
+                                            <i class="fas fa-envelope me-2"></i>Email Notifications
+                                            <small class="d-block text-muted">Receive updates via email</small>
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-switch mb-3">
+                                        <input class="form-check-input" type="checkbox" id="budgetAlerts" name="budget_alerts"
+                                               {% if user.budget_alerts %}checked{% endif %}>
+                                        <label class="form-check-label" for="budgetAlerts">
+                                            <i class="fas fa-chart-pie me-2"></i>Budget Alerts
+                                            <small class="d-block text-muted">Get notified about budget status</small>
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-switch mb-3">
+                                        <input class="form-check-input" type="checkbox" id="goalUpdates" name="goal_updates"
+                                               {% if user.goal_updates %}checked{% endif %}>
+                                        <label class="form-check-label" for="goalUpdates">
+                                            <i class="fas fa-bullseye me-2"></i>Goal Progress Updates
+                                            <small class="d-block text-muted">Track your savings goals</small>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    <button type="submit" class="btn btn-primary hover-effect">
+                                        <i class="fas fa-save me-2"></i>Save Preferences
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Account Management -->
+                <div class="tab-pane fade" id="account">
+                    <div class="card glass-effect hover-card">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="fas fa-user-cog me-2"></i>Account Management
+                            </h5>
+                            <div class="account-actions">
+                                <div class="action-item mb-4">
+                                    <h6><i class="fas fa-download me-2"></i>Export Data</h6>
+                                    <p class="text-muted">Download your financial data for backup or analysis</p>
+                                    <button class="btn btn-outline-primary hover-effect" data-bs-toggle="modal" data-bs-target="#exportDataModal">
+                                        <i class="fas fa-download me-2"></i>Export Data
+                                    </button>
+                                </div>
+                                <div class="action-item">
+                                    <h6><i class="fas fa-trash-alt me-2"></i>Delete Account</h6>
+                                    <p class="text-muted">Permanently delete your account and all associated data</p>
+                                    <button class="btn btn-outline-danger hover-effect" data-bs-toggle="modal" data-bs-target="#deleteAccountModal">
+                                        <i class="fas fa-trash-alt me-2"></i>Delete Account
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Export Data Modal -->
+<div class="modal fade" id="exportDataModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content glass-effect">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-download me-2"></i>Export Data</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Choose the data you want to export:</p>
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" id="exportTransactions" checked>
+                    <label class="form-check-label" for="exportTransactions">Transactions</label>
+                </div>
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" id="exportBudgets" checked>
+                    <label class="form-check-label" for="exportBudgets">Budgets</label>
+                </div>
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" id="exportGoals" checked>
+                    <label class="form-check-label" for="exportGoals">Goals</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary hover-effect">
+                    <i class="fas fa-download me-2"></i>Export
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Account Modal -->
+<div class="modal fade" id="deleteAccountModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content glass-effect">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-exclamation-triangle me-2"></i>Delete Account</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-danger">Warning: This action cannot be undone. All your data will be permanently deleted.</p>
+                <div class="mb-3">
+                    <label class="form-label">Enter your password to confirm</label>
+                    <input type="password" class="form-control" placeholder="Enter your password">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger hover-effect">
+                    <i class="fas fa-trash-alt me-2"></i>Delete Account
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.settings-container {
+    padding: 20px;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
+}
+
+.settings-header {
+    margin-bottom: 2rem;
+}
+
+.page-title {
+    color: #2c3e50;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    animation: slideIn 0.5s ease-out;
+}
+
+.glass-effect {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.hover-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+/* Updated Settings Navigation Styles */
+.settings-nav {
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.settings-nav .nav-link {
+    color: #000000;
+    padding: 1rem 1.5rem;
+    border-radius: 0;
+    transition: all 0.3s ease;
+    border-left: 3px solid transparent;
+    display: flex;
+    align-items: center;
+    font-weight: 500;
+    background-color: #f8f9fa;
+    margin-bottom: 2px;
+}
+
+.settings-nav .nav-link i {
+    width: 24px;
+    margin-right: 10px;
+    font-size: 1.1rem;
+    color: #000000;
+}
+
+.settings-nav .nav-link:hover {
+    background-color: #e9ecef;
+    border-left-color: var(--accent-color);
+    color: var(--accent-color);
+}
+
+.settings-nav .nav-link.active {
+    background-color: var(--accent-color);
+    color: white;
+    border-left-color: var(--accent-color);
+    font-weight: 600;
+}
+
+.settings-nav .nav-link.active i {
+    color: white;
+}
+
+/* Add a subtle separator between nav items */
+.settings-nav .nav-link:not(:last-child) {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.card-title {
+    color: #2c3e50;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+}
+
+.card-title i {
+    color: var(--accent-color);
+}
+
+.form-label {
+    color: #2c3e50;
+    font-weight: 500;
+}
+
+.input-group-text {
+    background-color: var(--accent-color);
+    color: white;
+    border: none;
+}
+
+.form-control {
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    padding: 0.75rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+    border-color: var(--accent-color);
+}
+
+.notification-options .form-check-label {
+    display: flex;
+    flex-direction: column;
+}
+
+.account-actions .action-item {
+    padding: 1rem;
+    border-radius: 8px;
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.account-actions h6 {
+    margin-bottom: 0.5rem;
+    color: #2c3e50;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.hover-effect {
+    transition: all 0.3s ease;
+}
+
+.hover-effect:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.form-check-input:checked {
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+}
+
+.modal-content {
+    border: none;
+    border-radius: 12px;
+}
+
+.modal-header {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.modal-footer {
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .settings-container {
+        padding: 15px;
+    }
+    
+    .settings-nav {
+        margin-bottom: 1rem;
+    }
+    
+    .card {
+        margin-bottom: 1rem;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add animation to form submissions
+    const forms = document.querySelectorAll('.settings-form');
+    forms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            const button = this.querySelector('button[type="submit"]');
+            button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving...';
+            button.disabled = true;
+        });
+    });
+
+    // Add password strength indicator
+    const passwordInputs = document.querySelectorAll('input[type="password"]');
+    passwordInputs.forEach(input => {
+        input.addEventListener('input', function() {
+            const strength = calculatePasswordStrength(this.value);
+            updatePasswordStrengthIndicator(this, strength);
+        });
+    });
+});
+
+function calculatePasswordStrength(password) {
+    let strength = 0;
+    if (password.length >= 8) strength++;
+    if (password.match(/[a-z]/)) strength++;
+    if (password.match(/[A-Z]/)) strength++;
+    if (password.match(/[0-9]/)) strength++;
+    if (password.match(/[^a-zA-Z0-9]/)) strength++;
+    return strength;
+}
+
+function updatePasswordStrengthIndicator(input, strength) {
+    const parent = input.parentElement;
+    let indicator = parent.querySelector('.password-strength');
+    
+    if (!indicator) {
+        indicator = document.createElement('div');
+        indicator.className = 'password-strength mt-2';
+        parent.appendChild(indicator);
+    }
+
+    const colors = ['#dc3545', '#ffc107', '#28a745'];
+    const messages = ['Weak', 'Medium', 'Strong'];
+    const index = Math.min(Math.floor(strength / 2), 2);
+
+    indicator.style.color = colors[index];
+    indicator.textContent = `Password Strength: ${messages[index]}`;
+}
+</script>
+{% endblock %}
