@@ -13,11 +13,11 @@
         <div class="col-md-4 mb-4">
             <div class="card glass-effect hover-card">
                 <div class="card-body">
-                    <h5 class="card-title"><i class="fas fa-money-bill-wave me-2"></i>Monthly Income</h5>
+                    <h5 class="card-title"><i class="fas fa-money-bill-wave me-2"></i>Current Month Income</h5>
                     <div class="summary-value text-success">${{ "%.2f"|format(monthly_income) }}</div>
                     <div class="summary-trend">
                         <i class="fas fa-arrow-up"></i>
-                        <span>Monthly Overview</span>
+                        <span>{{ month_year_label }} Overview</span>
                     </div>
                 </div>
             </div>
@@ -25,11 +25,11 @@
         <div class="col-md-4 mb-4">
             <div class="card glass-effect hover-card">
                 <div class="card-body">
-                    <h5 class="card-title"><i class="fas fa-receipt me-2"></i>Monthly Expenses</h5>
+                    <h5 class="card-title"><i class="fas fa-receipt me-2"></i>Current Month Expense</h5>
                     <div class="summary-value text-danger">${{ "%.2f"|format(monthly_expenses) }}</div>
                     <div class="summary-trend">
                         <i class="fas fa-arrow-down"></i>
-                        <span>Monthly Overview</span>
+                        <span>{{ month_year_label }} Overview</span>
                     </div>
                 </div>
             </div>
@@ -43,7 +43,7 @@
                     </div>
                     <div class="summary-trend">
                         <i class="fas {% if monthly_savings >= 0 %}fa-arrow-up{% else %}fa-arrow-down{% endif %}"></i>
-                        <span>Monthly Overview</span>
+                        <span>{{ month_year_label }} Overview</span>
                     </div>
                 </div>
             </div>
@@ -56,7 +56,7 @@
             <div class="card glass-effect hover-card">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h5 class="card-title mb-0"><i class="fas fa-chart-line me-2"></i>Monthly Trends</h5>
+                        <h5 class="card-title mb-0"><i class="fas fa-chart-line me-2"></i>Current Month Trends</h5>
                         <button class="btn btn-sm btn-outline-primary hover-effect" onclick="openFullscreen('trendsChart')">
                             <i class="fas fa-expand"></i>
                         </button>
@@ -245,22 +245,22 @@ document.addEventListener('DOMContentLoaded', function() {
     new Chart(trendsCtx, {
         type: 'line',
         data: {
-            labels: {{ monthly_labels|tojson }},
+            labels: {{ daily_labels|tojson }},
             datasets: [
                 {
                     label: 'Income',
-                    data: {{ monthly_income_data|tojson }},
-                    borderColor: 'rgba(40, 167, 69, 1)',
-                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
-                    tension: 0.4,
+                    data: {{ daily_income_data|tojson }},
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    tension: 0.1,
                     fill: true
                 },
                 {
                     label: 'Expenses',
-                    data: {{ monthly_expense_data|tojson }},
-                    borderColor: 'rgba(220, 53, 69, 1)',
-                    backgroundColor: 'rgba(220, 53, 69, 0.1)',
-                    tension: 0.4,
+                    data: {{ daily_expense_data|tojson }},
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    tension: 0.1,
                     fill: true
                 }
             ]
@@ -268,17 +268,33 @@ document.addEventListener('DOMContentLoaded', function() {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'top'
-                }
-            },
             scales: {
-                y: {
-                    beginAtZero: true,
+                x: {
                     title: {
                         display: true,
-                        text: 'Amount ($)'
+                        text: 'Day'
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Amount'
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.raw !== null) {
+                                label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.raw);
+                            }
+                            return label;
+                        }
                     }
                 }
             }
@@ -288,47 +304,87 @@ document.addEventListener('DOMContentLoaded', function() {
     // Category Breakdown Chart
     const categoryCtx = document.getElementById('categoryChart').getContext('2d');
     new Chart(categoryCtx, {
-        type: 'doughnut',
+        type: 'pie',
         data: {
             labels: {{ category_labels|tojson }},
             datasets: [{
                 data: {{ category_data|tojson }},
                 backgroundColor: [
-                    'rgba(255, 99, 132, 0.8)',
-                    'rgba(54, 162, 235, 0.8)',
-                    'rgba(255, 206, 86, 0.8)',
-                    'rgba(75, 192, 192, 0.8)',
-                    'rgba(153, 102, 255, 0.8)',
-                    'rgba(255, 159, 64, 0.8)'
+                    '#FF6384',
+                    '#36A2EB',
+                    '#FFCE56',
+                    '#4BC0C0',
+                    '#9966CC',
+                    '#FF9F40',
+                    '#5E35B1',
+                    '#00897B',
+                    '#FBC02D',
+                    '#D81B60'
                 ],
-                borderWidth: 1
+                hoverBackgroundColor: [
+                    '#FF6384',
+                    '#36A2EB',
+                    '#FFCE56',
+                    '#4BC0C0',
+                    '#9966CC'
+                ]
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: {
-                    position: 'bottom'
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.raw !== null) {
+                                label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.raw);
+                            }
+                            return label;
+                        }
+                    }
                 }
             }
         }
     });
-});
 
-// Fullscreen chart functionality
-function openFullscreen(chartId) {
-    const modal = new bootstrap.Modal(document.getElementById('fullscreenChartModal'));
-    const fullscreenCanvas = document.getElementById('fullscreenChart');
-    const originalCanvas = document.getElementById(chartId);
-    
-    // Clone the chart configuration
-    const chart = Chart.getChart(originalCanvas);
-    const config = JSON.parse(JSON.stringify(chart.config));
-    
-    // Create new chart in fullscreen modal
-    new Chart(fullscreenCanvas, config);
-    modal.show();
-}
+    // Fullscreen Chart Functionality
+    let currentChart = null;
+
+    window.openFullscreen = function(chartId) {
+        const originalCanvas = document.getElementById(chartId);
+        const modalCanvas = document.getElementById('fullscreenChart');
+        const modal = new bootstrap.Modal(document.getElementById('fullscreenChartModal'));
+
+        // Destroy previous chart instance if it exists
+        if (currentChart) {
+            currentChart.destroy();
+        }
+
+        // Create a new chart instance in the modal
+        const chartData = originalCanvas.chart.data;
+        const chartOptions = originalCanvas.chart.options;
+
+        currentChart = new Chart(modalCanvas, {
+            type: originalCanvas.chart.config.type,
+            data: chartData,
+            options: chartOptions
+        });
+
+        modal.show();
+    };
+
+    // Destroy fullscreen chart when modal is hidden
+    document.getElementById('fullscreenChartModal').addEventListener('hidden.bs.modal', function () {
+        if (currentChart) {
+            currentChart.destroy();
+            currentChart = null;
+        }
+    });
+});
 </script>
 {% endblock %}

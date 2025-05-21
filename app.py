@@ -1,17 +1,20 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 from functools import wraps
 import json
 import os
 import random
+import calendar
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'mysql+pymysql://root:@localhost/finance_tracker')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 
 # Login required decorator
 def login_required(f):
@@ -67,6 +70,177 @@ class Budget(db.Model):
     month = db.Column(db.DateTime, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
+class Debt(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    type = db.Column(db.String(50), nullable=False)  # 'credit_card', 'loan', 'mortgage', etc.
+    balance = db.Column(db.Float, nullable=False)
+    original_amount = db.Column(db.Float, nullable=False)
+    interest_rate = db.Column(db.Float, nullable=False)
+    minimum_payment = db.Column(db.Float, nullable=False)
+    next_payment_date = db.Column(db.DateTime, nullable=False)
+    paid_amount = db.Column(db.Float, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+def get_spending_warnings(user_id):
+    """Calculate spending warnings based on user's transaction patterns"""
+    warnings = []
+    
+    # Get current month's transactions
+    current_month = datetime.now().replace(day=1)
+    monthly_transactions = Transaction.query.filter_by(
+        user_id=user_id,
+        type='expense'
+    ).filter(Transaction.date >= current_month).all()
+    
+    # Get user's budgets
+    budgets = Budget.query.filter_by(user_id=user_id).all()
+    
+    # Check for overspending in budget categories
+    for budget in budgets:
+        spent = sum(t.amount for t in monthly_transactions if t.category == budget.category)
+        if spent > budget.limit:
+            warnings.append({
+                'type': 'budget_exceeded',
+                'category': budget.category,
+                'message': f'You have exceeded your {budget.category} budget by ${spent - budget.limit:.2f}',
+                'severity': 'high'
+            })
+        elif spent > budget.limit * 0.8:  # Warning at 80% of budget
+            warnings.append({
+                'type': 'budget_warning',
+                'category': budget.category,
+                'message': f'You are close to exceeding your {budget.category} budget (${budget.limit - spent:.2f} remaining)',
+                'severity': 'medium'
+            })
+    
+    # Check for unusual spending patterns
+    category_totals = {}
+    for transaction in monthly_transactions:
+        category_totals[transaction.category] = category_totals.get(transaction.category, 0) + transaction.amount
+    
+    # Get average spending for each category from previous months
+    for category in category_totals:
+        prev_months_avg = db.session.query(db.func.avg(Transaction.amount)).filter(
+            Transaction.user_id == user_id,
+            Transaction.category == category,
+            Transaction.type == 'expense',
+            Transaction.date < current_month
+        ).scalar() or 0
+        
+        if category_totals[category] > prev_months_avg * 1.5:  # 50% increase
+            warnings.append({
+                'type': 'spending_increase',
+                'category': category,
+                'message': f'Unusual increase in {category} spending this month',
+                'severity': 'medium'
+            })
+    
+    return warnings
+
+def get_savings_advice(user_id):
+    """Generate personalized savings advice based on user's financial data"""
+    advice = []
+    
+    # Get user's goals and current savings
+    goals = Goal.query.filter_by(user_id=user_id).all()
+    total_savings = sum(goal.current_amount for goal in goals)
+    total_goals = sum(goal.target_amount for goal in goals)
+    
+    # Get monthly income and expenses
+    current_month = datetime.now().replace(day=1)
+    monthly_income = db.session.query(db.func.sum(Transaction.amount)).filter(
+        Transaction.user_id == user_id,
+        Transaction.type == 'income',
+        Transaction.date >= current_month
+    ).scalar() or 0
+    
+    monthly_expenses = db.session.query(db.func.sum(Transaction.amount)).filter(
+        Transaction.user_id == user_id,
+        Transaction.type == 'expense',
+        Transaction.date >= current_month
+    ).scalar() or 0
+    
+    # Calculate savings rate
+    if monthly_income > 0:
+        savings_rate = (monthly_income - monthly_expenses) / monthly_income * 100
+    else:
+        savings_rate = 0
+    
+    # Generate advice based on savings rate
+    if savings_rate < 20:
+        advice.append({
+            'type': 'savings_rate',
+            'message': 'Your savings rate is below the recommended 20%. Consider reducing non-essential expenses.',
+            'priority': 'high'
+        })
+    elif savings_rate > 50:
+        advice.append({
+            'type': 'savings_rate',
+            'message': 'Great job! Your high savings rate puts you on track for financial independence.',
+            'priority': 'low'
+        })
+    
+    # Check progress towards goals
+    for goal in goals:
+        progress = (goal.current_amount / goal.target_amount) * 100
+        months_remaining = (goal.target_date - datetime.now()).days / 30
+        
+        if months_remaining > 0:
+            required_monthly = (goal.target_amount - goal.current_amount) / months_remaining
+            
+            if required_monthly > (monthly_income - monthly_expenses):
+                advice.append({
+                    'type': 'goal_progress',
+                    'message': f'To reach your {goal.name} goal, you need to save ${required_monthly:.2f} monthly',
+                    'priority': 'medium'
+                })
+    
+    return advice
+
+def get_budget_tips(user_id):
+    """Generate personalized budget tips based on spending patterns"""
+    tips = []
+    
+    # Get spending patterns for the last 3 months
+    three_months_ago = datetime.now().replace(day=1) - timedelta(days=90)
+    recent_transactions = Transaction.query.filter_by(
+        user_id=user_id,
+        type='expense'
+    ).filter(Transaction.date >= three_months_ago).all()
+    
+    # Analyze category spending
+    category_totals = {}
+    for transaction in recent_transactions:
+        category_totals[transaction.category] = category_totals.get(transaction.category, 0) + transaction.amount
+    
+    # Identify highest spending categories
+    sorted_categories = sorted(category_totals.items(), key=lambda x: x[1], reverse=True)
+    
+    # Generate tips based on spending patterns
+    for category, amount in sorted_categories[:3]:  # Top 3 spending categories
+        if category in ['Dining', 'Entertainment', 'Shopping']:
+            tips.append({
+                'category': category,
+                'message': f'Consider reducing {category.lower()} expenses by setting a weekly limit',
+                'suggestion': 'Try meal prepping or finding free entertainment options'
+            })
+        elif category in ['Transportation', 'Bills']:
+            tips.append({
+                'category': category,
+                'message': f'Look for ways to optimize your {category.lower()} expenses',
+                'suggestion': 'Compare service providers or consider carpooling'
+            })
+    
+    # Add general budget tips
+    tips.append({
+        'category': 'General',
+        'message': 'Review your subscriptions and recurring payments',
+        'suggestion': 'Cancel unused subscriptions to save money'
+    })
+    
+    return tips
+
 @app.route('/dashboard')
 def dashboard():
     if 'user_id' not in session:
@@ -95,6 +269,86 @@ def dashboard():
     for t in monthly_transactions:
         if t.type == 'expense':
             expense_categories[t.category] = expense_categories.get(t.category, 0) + t.amount
+    
+    # Spending Analysis
+    spending_analysis = {
+        'monthly_trend': {},
+        'category_trends': {},
+        'spending_patterns': []
+    }
+    
+    # Calculate monthly spending trends for the last 6 months
+    for i in range(6):
+        month = (current_month - timedelta(days=30*i)).replace(day=1)
+        month_transactions = Transaction.query.filter_by(user_id=session['user_id']).filter(
+            Transaction.date >= month,
+            Transaction.date < (month + timedelta(days=32)).replace(day=1)
+        ).all()
+        
+        month_expenses = sum(t.amount for t in month_transactions if t.type == 'expense')
+        month_income = sum(t.amount for t in month_transactions if t.type == 'income')
+        
+        spending_analysis['monthly_trend'][month.strftime('%Y-%m')] = {
+            'expenses': month_expenses,
+            'income': month_income,
+            'savings_rate': ((month_income - month_expenses) / month_income * 100) if month_income > 0 else 0
+        }
+    
+    # Calculate category trends
+    for category in expense_categories.keys():
+        category_trend = []
+        for i in range(6):
+            month = (current_month - timedelta(days=30*i)).replace(day=1)
+            month_amount = sum(t.amount for t in monthly_transactions 
+                             if t.category == category and t.date >= month and t.date < (month + timedelta(days=32)).replace(day=1))
+            category_trend.append(month_amount)
+        spending_analysis['category_trends'][category] = category_trend
+    
+    # Identify spending patterns
+    if expense_categories:
+        avg_monthly_spending = sum(expense_categories.values()) / len(expense_categories)
+        for category, amount in expense_categories.items():
+            if amount > avg_monthly_spending * 1.5:
+                spending_analysis['spending_patterns'].append({
+                    'category': category,
+                    'amount': amount,
+                    'message': f'High spending in {category} category'
+                })
+    
+    # Cashflow Forecasting
+    cashflow_forecast = {
+        'next_month': {
+            'projected_income': total_income,  # Assuming stable income
+            'projected_expenses': total_expenses,  # Assuming stable expenses
+            'projected_balance': balance
+        },
+        'three_months': {
+            'projected_income': total_income * 3,
+            'projected_expenses': total_expenses * 3,
+            'projected_balance': balance * 3
+        },
+        'six_months': {
+            'projected_income': total_income * 6,
+            'projected_expenses': total_expenses * 6,
+            'projected_balance': balance * 6
+        }
+    }
+    
+    # Add trend-based adjustments to forecasts
+    if len(spending_analysis['monthly_trend']) >= 2:
+        recent_months = list(spending_analysis['monthly_trend'].values())[:2]
+        expense_trend = recent_months[0]['expenses'] - recent_months[1]['expenses']
+        income_trend = recent_months[0]['income'] - recent_months[1]['income']
+        
+        # Adjust forecasts based on trends
+        for period in ['next_month', 'three_months', 'six_months']:
+            months = 1 if period == 'next_month' else (3 if period == 'three_months' else 6)
+            cashflow_forecast[period]['projected_expenses'] += expense_trend * months
+            cashflow_forecast[period]['projected_income'] += income_trend * months
+            cashflow_forecast[period]['projected_balance'] = (
+                cashflow_forecast[period]['projected_income'] - 
+                cashflow_forecast[period]['projected_expenses']
+            )
     
     # Check budget status
     budget_alert = None
@@ -162,7 +416,16 @@ def dashboard():
         
         budget.spent = spent
 
+    # Get user's debts
+    debts = Debt.query.filter_by(user_id=session['user_id']).all()
+    
+    # Get new insights
+    spending_warnings = get_spending_warnings(session['user_id'])
+    savings_advice = get_savings_advice(session['user_id'])
+    budget_tips = get_budget_tips(session['user_id'])
+    
     return render_template('dashboard.html',
+                         user=user,
                          transactions=transactions,
                          income=total_income,
                          expenses=total_expenses,
@@ -174,7 +437,13 @@ def dashboard():
                          savings_goals=savings_goals,
                          ai_insights=ai_insights,
                          daily_data=daily_data,
-                         budgets=budgets)
+                         budgets=budgets,
+                         debts=debts,
+                         spending_analysis=spending_analysis,
+                         cashflow_forecast=cashflow_forecast,
+                         spending_warnings=spending_warnings,
+                         savings_advice=savings_advice,
+                         budget_tips=budget_tips)
 
 # Add a redirect from root to dashboard
 @app.route('/')
@@ -317,38 +586,47 @@ def reports():
     
     transactions = Transaction.query.filter_by(user_id=session['user_id']).all()
     
-    # Calculate monthly totals
-    monthly_data = {}
-    for transaction in transactions:
-        month_key = transaction.date.strftime('%Y-%m')
-        if month_key not in monthly_data:
-            monthly_data[month_key] = {'income': 0.0, 'expense': 0.0}
-        monthly_data[month_key][transaction.type] += float(transaction.amount)
-    
-    # Sort monthly data by date
-    monthly_data = dict(sorted(monthly_data.items()))
-    
-    # Prepare data for charts
-    monthly_labels = list(monthly_data.keys())
-    monthly_income_data = [float(data['income']) for data in monthly_data.values()]
-    monthly_expense_data = [float(data['expense']) for data in monthly_data.values()]
-    
     # Calculate current month's totals
-    current_month = datetime.now().strftime('%Y-%m')
-    monthly_income = float(monthly_data.get(current_month, {}).get('income', 0.0))
-    monthly_expenses = float(monthly_data.get(current_month, {}).get('expense', 0.0))
+    current_month_year = datetime.now().strftime('%Y-%m')
+    monthly_income = 0.0
+    monthly_expenses = 0.0
+
+    # Filter transactions for the current month and aggregate daily
+    daily_data = {}
+    transactions_current_month = [t for t in transactions if t.date.strftime('%Y-%m') == current_month_year]
+
+    for transaction in transactions_current_month:
+        day_key = transaction.date.strftime('%Y-%m-%d')
+        if day_key not in daily_data:
+            daily_data[day_key] = {'income': 0.0, 'expense': 0.0}
+        daily_data[day_key][transaction.type] += float(transaction.amount)
+
+        if transaction.type == 'income':
+            monthly_income += float(transaction.amount)
+        else:
+            monthly_expenses += float(transaction.amount)
+
+    # Generate all days in the current month for labels
+    year, month = map(int, current_month_year.split('-'))
+    num_days = calendar.monthrange(year, month)[1]
+    daily_labels = [f'{year}-{month:02d}-{day:02d}' for day in range(1, num_days + 1)]
+
+    # Prepare daily income and expense data, filling in 0 for days with no transactions
+    daily_income_data = [daily_data.get(day, {'income': 0.0})['income'] for day in daily_labels]
+    daily_expense_data = [daily_data.get(day, {'expense': 0.0})['expense'] for day in daily_labels]
+
     monthly_savings = monthly_income - monthly_expenses
-    
+
     # Calculate category breakdown for current month
     category_breakdown = []
     category_totals = {}
-    
-    for transaction in transactions:
-        if transaction.date.strftime('%Y-%m') == current_month and transaction.type == 'expense':
+
+    for transaction in transactions_current_month: # Use current month transactions
+        if transaction.type == 'expense':
             category_totals[transaction.category] = category_totals.get(transaction.category, 0.0) + float(transaction.amount)
-    
+
     total_expenses = sum(category_totals.values())
-    
+
     for category, amount in category_totals.items():
         percentage = (amount / total_expenses * 100) if total_expenses > 0 else 0.0
         category_breakdown.append({
@@ -356,24 +634,30 @@ def reports():
             'amount': float(amount),
             'percentage': float(percentage)
         })
-    
+
     # Sort category breakdown by amount
     category_breakdown.sort(key=lambda x: x['amount'], reverse=True)
-    
+
     # Prepare data for category chart
     category_labels = [str(item['name']) for item in category_breakdown]
     category_data = [float(item['amount']) for item in category_breakdown]
-    
+
+    # Get current month and year for display
+    current_month_name = datetime.now().strftime('%B')
+    current_year = datetime.now().strftime('%Y')
+    month_year_label = f'{current_month_name} {current_year}'
+
     return render_template('reports.html',
-                         monthly_labels=monthly_labels,
-                         monthly_income_data=monthly_income_data,
-                         monthly_expense_data=monthly_expense_data,
+                         daily_labels=daily_labels,
+                         daily_income_data=daily_income_data,
+                         daily_expense_data=daily_expense_data,
                          monthly_income=monthly_income,
                          monthly_expenses=monthly_expenses,
                          monthly_savings=monthly_savings,
                          category_breakdown=category_breakdown,
                          category_labels=category_labels,
-                         category_data=category_data)
+                         category_data=category_data,
+                         month_year_label=month_year_label)
 
 @app.route('/goals')
 @login_required
@@ -559,19 +843,126 @@ def settings():
 
 @app.route('/ai_query', methods=['POST'])
 def ai_query():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Not authenticated'}), 401
+        
     query = request.json.get('query')
-    # Here you would integrate with an AI service
-    # For now, return some sample responses
-    responses = {
-        'spending': 'Based on your spending patterns, you could save more in the dining category.',
-        'budget': 'Your current budget utilization is at 75%. You\'re doing well!',
-        'savings': 'You\'re on track to meet your savings goal by December.',
+    
+    # Get user's financial data
+    user_id = session['user_id']
+    
+    # Get recent transactions
+    recent_transactions = Transaction.query.filter_by(user_id=user_id)\
+        .order_by(Transaction.date.desc())\
+        .limit(10).all()
+    
+    # Get savings goals
+    savings_goals = Goal.query.filter_by(user_id=user_id).all()
+    
+    # Get current month's budgets
+    current_month = datetime.now().replace(day=1)
+    budgets = Budget.query.filter_by(
+        user_id=user_id,
+        month=current_month
+    ).all()
+    
+    # Get debts
+    debts = Debt.query.filter_by(user_id=user_id).all()
+    
+    # Calculate total income and expenses
+    total_income = sum(t.amount for t in recent_transactions if t.type == 'income')
+    total_expenses = sum(t.amount for t in recent_transactions if t.type == 'expense')
+    
+    # Prepare context for AI
+    context = {
+        'recent_transactions': [
+            {
+                'date': t.date.strftime('%Y-%m-%d'),
+                'category': t.category,
+                'type': t.type,
+                'amount': float(t.amount)
+            } for t in recent_transactions
+        ],
+        'savings_goals': [
+            {
+                'name': g.name,
+                'target_amount': float(g.target_amount),
+                'current_amount': float(g.current_amount),
+                'target_date': g.target_date.strftime('%Y-%m-%d')
+            } for g in savings_goals
+        ],
+        'budgets': [
+            {
+                'category': b.category,
+                'amount': float(b.amount),
+                'spent': float(b.spent) if hasattr(b, 'spent') else 0
+            } for b in budgets
+        ],
+        'debts': [
+            {
+                'name': d.name,
+                'balance': float(d.balance),
+                'interest_rate': float(d.interest_rate),
+                'minimum_payment': float(d.minimum_payment)
+            } for d in debts
+        ],
+        'summary': {
+            'total_income': float(total_income),
+            'total_expenses': float(total_expenses),
+            'net_balance': float(total_income - total_expenses)
+        }
     }
     
+    # Generate response based on query and context
+    response = generate_ai_response(query, context)
+    
     return jsonify({
-        'response': responses.get(query.lower(), 
-            "I can help you analyze your spending, budget, and savings. What would you like to know?")
+        'response': response
     })
+
+def generate_ai_response(query, context):
+    query = query.lower()
+    
+    # Check for spending-related questions
+    if any(word in query for word in ['spend', 'expense', 'cost', 'money']):
+        if context['summary']['total_expenses'] > context['summary']['total_income']:
+            return f"Your expenses (${context['summary']['total_expenses']:.2f}) are higher than your income (${context['summary']['total_income']:.2f}). Consider reviewing your spending habits."
+        else:
+            return f"Your spending looks healthy! You've spent ${context['summary']['total_expenses']:.2f} out of ${context['summary']['total_income']:.2f} income."
+    
+    # Check for savings-related questions
+    elif any(word in query for word in ['save', 'savings', 'goal']):
+        if context['savings_goals']:
+            goals_status = []
+            for goal in context['savings_goals']:
+                progress = (goal['current_amount'] / goal['target_amount']) * 100
+                goals_status.append(f"{goal['name']}: {progress:.1f}% complete")
+            return f"Your savings goals:\n" + "\n".join(goals_status)
+        else:
+            return "You haven't set any savings goals yet. Consider setting some to help track your progress!"
+    
+    # Check for budget-related questions
+    elif any(word in query for word in ['budget', 'limit']):
+        if context['budgets']:
+            budget_status = []
+            for budget in context['budgets']:
+                usage = (budget['spent'] / budget['amount']) * 100
+                status = "over" if usage > 100 else "under"
+                budget_status.append(f"{budget['category']}: {usage:.1f}% of budget ({status})")
+            return "Your budget status:\n" + "\n".join(budget_status)
+        else:
+            return "You haven't set any budgets yet. Setting budgets can help you manage your spending better!"
+    
+    # Check for debt-related questions
+    elif any(word in query for word in ['debt', 'loan', 'credit']):
+        if context['debts']:
+            total_debt = sum(d['balance'] for d in context['debts'])
+            return f"You have {len(context['debts'])} active debts totaling ${total_debt:.2f}. Consider focusing on paying off high-interest debts first."
+        else:
+            return "You don't have any active debts recorded. That's great!"
+    
+    # Default response
+    return "I can help you analyze your spending, savings goals, budgets, and debts. What would you like to know about?"
 
 def create_test_user():
     try:
@@ -678,6 +1069,68 @@ def create_test_data():
     except Exception as e:
         print(f"Error creating test data: {e}")
         db.session.rollback()
+
+@app.route('/add_debt', methods=['POST'])
+@login_required
+def add_debt():
+    try:
+        data = request.get_json()
+        
+        # Create new debt
+        new_debt = Debt(
+            user_id=session['user_id'],
+            name=data['name'],
+            type=data['type'],
+            balance=float(data['balance']),
+            original_amount=float(data['balance']),  # Initial balance is the original amount
+            interest_rate=float(data['interest_rate']),
+            minimum_payment=float(data['minimum_payment']),
+            next_payment_date=datetime.strptime(data['next_payment_date'], '%Y-%m-%d'),
+            paid_amount=0.0
+        )
+        
+        db.session.add(new_debt)
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Debt added successfully'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 400
+
+@app.route('/update_debt/<int:debt_id>', methods=['POST'])
+@login_required
+def update_debt(debt_id):
+    try:
+        debt = Debt.query.filter_by(id=debt_id, user_id=session['user_id']).first_or_404()
+        data = request.get_json()
+        
+        # Update debt fields
+        if 'payment_amount' in data:
+            payment = float(data['payment_amount'])
+            debt.paid_amount += payment
+            debt.balance -= payment
+            
+            # Update next payment date if it's a recurring payment
+            if debt.type in ['credit_card', 'loan', 'mortgage']:
+                debt.next_payment_date = debt.next_payment_date + timedelta(days=30)
+        
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Debt updated successfully'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 400
+
+@app.route('/delete_debt/<int:debt_id>', methods=['POST'])
+@login_required
+def delete_debt(debt_id):
+    try:
+        debt = Debt.query.filter_by(id=debt_id, user_id=session['user_id']).first_or_404()
+        db.session.delete(debt)
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Debt deleted successfully'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 400
 
 if __name__ == '__main__':
     with app.app_context():

@@ -78,63 +78,84 @@
         </div>
     </div>
 
-    <!-- AI Insights with modern styling -->
+    <!-- Spending Analysis Section -->
     <div class="row mb-4">
         <div class="col-12">
             <div class="card glass-effect">
                 <div class="card-body">
                     <h5 class="card-title">
-                        <i class="fas fa-brain me-2"></i>AI Insights
+                        <i class="fas fa-chart-bar me-2"></i>Spending Analysis
                     </h5>
-                    <div class="ai-insights">
-                        {% for insight in ai_insights %}
-                        <div class="insight-item hover-effect">
-                            <i class="fas fa-{{ insight.icon }} insight-icon"></i>
-                            <p>{{ insight.message }}</p>
+                    <div class="row">
+                        <!-- Monthly Trends -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h6 class="card-subtitle mb-3">Monthly Trends</h6>
+                                    <div class="chart-container">
+                                        <canvas id="monthlyTrendChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        {% endfor %}
+
+                        <!-- Category Trends -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h6 class="card-subtitle mb-3">Category Trends (Last 6 Months)</h6>
+                                    <div class="chart-container">
+                                        <canvas id="categoryTrendChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Spending Warning Console -->
+                    <div class="spending-warning-console">
+                        <div class="console-header">
+                            <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                            <span>Spending Insights</span>
+                        </div>
+                        <div class="console-body" id="spendingWarnings">
+                            <!-- Warnings will be dynamically inserted here -->
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Charts with daily data -->
-    <div class="row">
-        <div class="col-md-6 mb-4">
-            <div class="card glass-effect h-100">
+    <!-- Expense Forecasting Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card glass-effect">
                 <div class="card-body">
-                    <h5 class="card-title d-flex justify-content-between align-items-center">
-                        <span><i class="fas fa-chart-line me-2"></i>Daily Income vs Expenses</span>
-                        <button class="btn btn-sm btn-outline-primary hover-effect" onclick="openFullscreen('trendChart')">
-                            <i class="fas fa-expand"></i>
-                        </button>
+                    <h5 class="card-title">
+                        <i class="fas fa-chart-line me-2"></i>Expense Forecasting
                     </h5>
-                    <div class="chart-container">
-                        <canvas id="trendChart"></canvas>
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="chart-container">
+                                <canvas id="forecastChart"></canvas>
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-6 mb-4">
-            <div class="card glass-effect h-100">
-                <div class="card-body">
-                    <h5 class="card-title d-flex justify-content-between align-items-center">
-                        <span><i class="fas fa-chart-pie me-2"></i>Today's Spending by Category</span>
-                        <button class="btn btn-sm btn-outline-primary hover-effect" onclick="openFullscreen('categoryChart')">
-                            <i class="fas fa-expand"></i>
-                        </button>
-                    </h5>
-                    <div class="chart-container">
-                        <canvas id="categoryChart"></canvas>
+                    </div>
+                        <div class="col-md-4">
+                            <div class="forecast-insights">
+                                <h6 class="mb-3">Forecast Insights</h6>
+                                <div id="forecastInsights" class="insights-list">
+                                    <!-- Insights will be dynamically inserted here -->
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+        </div>
+    </div>
 
-    <!-- Savings Goals Progress with enhanced styling -->
+    <!-- Savings Goals Section -->
     <div class="row mb-4">
         <div class="col-12">
             <div class="card glass-effect">
@@ -185,32 +206,213 @@
         </div>
     </div>
 
-    <!-- Recent Transactions with modern table styling -->
-    <div class="row">
-        <div class="col-md-12 mb-4">
+    <!-- Savings Advice Section (Modern Design) -->
+    <div class="row mb-4">
+        <div class="col-12">
             <div class="card glass-effect">
                 <div class="card-body">
-                    <h5 class="card-title"><i class="fas fa-history me-2"></i>Recent Transactions</h5>
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
+                    <div class="savings-advice-header">
+                        <div class="header-content">
+                            <i class="fas fa-lightbulb pulse-icon"></i>
+                            <h5 class="mb-0">Smart Savings Insights</h5>
+                        </div>
+                        <div class="header-decoration"></div>
+                    </div>
+                    <div class="savings-advice-container">
+                        {% if savings_advice %}
+                            {% for advice in savings_advice %}
+                            <div class="advice-card {{ advice.priority }}" data-aos="fade-up" data-aos-delay="{{ loop.index0 * 100 }}">
+                                <div class="advice-icon-wrapper">
+                                    <i class="fas fa-{{ 'chart-line' if advice.priority == 'high' else 'chart-pie' if advice.priority == 'medium' else 'chart-bar' }}"></i>
+                                </div>
+                                <div class="advice-content">
+                                    <div class="advice-header">
+                                        <span class="priority-badge {{ advice.priority }}">
+                                        {{ advice.priority|title }} Priority
+                                    </span>
+                                        <span class="advice-date">{{ advice.date.strftime('%b %d') if advice.date else 'Today' }}</span>
+                                    </div>
+                                    <p class="advice-message">{{ advice.message }}</p>
+                                    {% if advice.suggestion %}
+                                    <div class="advice-suggestion">
+                                        <i class="fas fa-lightbulb suggestion-icon"></i>
+                                        <span>{{ advice.suggestion }}</span>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="advice-card success" data-aos="fade-up">
+                                <div class="advice-icon-wrapper">
+                                    <i class="fas fa-check-circle"></i>
+                                </div>
+                                <div class="advice-content">
+                                    <p class="advice-message">Your savings are on track! Keep up the good work.</p>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Debt Management Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card glass-effect">
+                <div class="card-body">
+                    <h5 class="card-title d-flex align-items-center">
+                        <i class="fas fa-credit-card me-2"></i>Debt Management
+                        <span class="ms-auto">
+                            <button class="btn btn-sm btn-outline-primary hover-effect" data-bs-toggle="modal" data-bs-target="#addDebtModal">
+                                <i class="fas fa-plus"></i> Add Debt
+                            </button>
+                        </span>
+                    </h5>
+                    <div class="debt-management-container">
+                        <div class="debt-cards-wrapper">
+                            {% for debt in debts %}
+                            <div class="debt-card-compact hover-effect" data-debt-id="{{ loop.index0 }}">
+                                <div class="debt-header-compact">
+                                    <div class="debt-title-compact">
+                                        <h6 class="debt-name mb-0">{{ debt.name }}</h6>
+                                        <span class="badge bg-{{ 'warning' if debt.type == 'credit_card' else 'info' }} debt-type">
+                                            {{ debt.type|title }}
+                                        </span>
+                                    </div>
+                                    <div class="debt-balance-compact">
+                                        <span class="balance-label">Balance</span>
+                                        <span class="balance-amount text-danger">${{ "%.2f"|format(debt.balance) }}</span>
+                                </div>
+                                    </div>
+                                <div class="debt-details-compact">
+                                    <div class="detail-item">
+                                        <span class="detail-label">Interest</span>
+                                        <span class="detail-value">{{ "%.1f"|format(debt.interest_rate) }}%</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-label">Next Payment</span>
+                                        <span class="detail-value">${{ "%.2f"|format(debt.minimum_payment) }}</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-label">Due Date</span>
+                                        <span class="detail-value">{{ debt.next_payment_date.strftime('%b %d') }}</span>
+                                </div>
+                                    </div>
+                                <div class="debt-progress-compact">
+                                    <div class="progress">
+                                        <div class="progress-bar bg-gradient" role="progressbar" 
+                                             style="width: {{ (debt.paid_amount / debt.original_amount * 100)|round }}%">
+                                        </div>
+                                    </div>
+                                    <div class="progress-info-compact">
+                                        <small class="text-muted">
+                                            Paid: ${{ "%.2f"|format(debt.paid_amount) }} of ${{ "%.2f"|format(debt.original_amount) }}
+                                        </small>
+                                    </div>
+                                </div>
+                                <div class="debt-actions-compact">
+                                    <button class="btn btn-sm btn-outline-primary" onclick="makePayment({{ loop.index0 }})">
+                                        <i class="fas fa-money-bill-wave"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-info" onclick="viewHistory({{ loop.index0 }})">
+                                        <i class="fas fa-history"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Budget Tips Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card glass-effect">
+                <div class="card-body">
+                    <h6 class="mb-3"><i class="fas fa-chart-pie text-primary me-2"></i>Budget Tips</h6>
+                    <div class="tips-carousel-container">
+                        {% if budget_tips %}
+                            {% for tip in budget_tips %}
+                            <div class="tip-card-compact hover-effect" data-tip-id="{{ loop.index0 }}">
+                                <div class="tip-icon-wrapper {{ tip.category|lower }}">
+                                    <i class="fas fa-{{ 'piggy-bank' if tip.category == 'Savings' else 'chart-line' if tip.category == 'Spending' else 'lightbulb' }}"></i>
+                                </div>
+                                <div class="tip-content-compact">
+                                    <div class="tip-header-compact">
+                                        <span class="tip-category-badge {{ tip.category|lower }}">{{ tip.category }}</span>
+                                        <span class="tip-date">{{ tip.date.strftime('%b %d') if tip.date else 'Today' }}</span>
+                                    </div>
+                                    <p class="tip-message-compact">{{ tip.message }}</p>
+                                    {% if tip.suggestion %}
+                                    <div class="tip-suggestion-compact">
+                                        <i class="fas fa-lightbulb"></i>
+                                        <span>{{ tip.suggestion }}</span>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="tip-card-compact success">
+                                <div class="tip-icon-wrapper success">
+                                    <i class="fas fa-check-circle"></i>
+                                </div>
+                                <div class="tip-content-compact">
+                                    <p class="tip-message-compact">Your budget is well managed!</p>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="carousel-controls-compact">
+                        <button class="btn btn-sm btn-icon" onclick="prevTip()">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <span class="tip-counter">1/{{ budget_tips|length if budget_tips else 1 }}</span>
+                        <button class="btn btn-sm btn-icon" onclick="nextTip()">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Transactions Section (Restored at bottom) -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card glass-effect">
+                <div class="card-body">
+                    <h6 class="card-title text-muted">
+                        <i class="fas fa-history me-2"></i>Recent Transactions
+                    </h6>
+                    <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                        <table class="table table-sm table-hover">
+                            <thead class="table-light">
                                 <tr>
                                     <th>Date</th>
                                     <th>Category</th>
-                                    <th>Amount</th>
                                     <th>Type</th>
+                                    <th>Amount</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for transaction in transactions %}
-                                <tr class="hover-effect">
-                                    <td>{{ transaction.date.strftime('%Y-%m-%d') }}</td>
+                                <tr>
+                                    <td class="text-muted">{{ transaction.date.strftime('%Y-%m-%d') }}</td>
                                     <td>{{ transaction.category }}</td>
-                                    <td>${{ "%.2f"|format(transaction.amount) }}</td>
                                     <td>
-                                        <span class="badge bg-{{ 'success' if transaction.type == 'income' else 'danger' }} badge-pill">
-                                            {{ transaction.type }}
+                                        <span class="badge bg-{{ 'success' if transaction.type == 'income' else 'danger' }} badge-sm">
+                                            {{ transaction.type|title }}
                                         </span>
+                                    </td>
+                                    <td class="{{ 'text-success' if transaction.type == 'income' else 'text-danger' }}">
+                                        ${{ "%.2f"|format(transaction.amount) }}
                                     </td>
                                 </tr>
                                 {% endfor %}
@@ -251,6 +453,55 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Debt Modal -->
+<div class="modal fade" id="addDebtModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Debt</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addDebtForm">
+                    <div class="mb-3">
+                        <label class="form-label">Debt Name</label>
+                        <input type="text" class="form-control" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Type</label>
+                        <select class="form-select" name="type" required>
+                            <option value="credit_card">Credit Card</option>
+                            <option value="loan">Loan</option>
+                            <option value="mortgage">Mortgage</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Balance</label>
+                        <input type="number" class="form-control" name="balance" step="0.01" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Interest Rate (%)</label>
+                        <input type="number" class="form-control" name="interest_rate" step="0.01" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Minimum Payment</label>
+                        <input type="number" class="form-control" name="minimum_payment" step="0.01" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Next Payment Date</label>
+                        <input type="date" class="form-control" name="next_payment_date" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="submitDebtForm()">Add Debt</button>
             </div>
         </div>
     </div>
@@ -503,7 +754,7 @@
 }
 
 .ai-chat-body {
-    height: 320px;
+    height: 300px;  /* Reduced from 320px to accommodate suggestions */
     padding: 15px;
     overflow-y: auto;
     background: rgba(255, 255, 255, 0.8);
@@ -515,6 +766,7 @@
     gap: 10px;
     background: rgba(255, 255, 255, 0.9);
     border-top: 1px solid rgba(0, 0, 0, 0.1);
+    position: relative;
 }
 
 .ai-chat-input input {
@@ -579,18 +831,22 @@
     border-radius: 15px;
     max-width: 85%;
     animation: messageSlideIn 0.3s ease-out;
+    white-space: pre-line;  /* Add this to preserve line breaks */
 }
 
 .user-message {
     background: #e3f2fd;
     margin-left: auto;
     border-bottom-right-radius: 5px;
+    color: #0d47a1;
 }
 
 .ai-message {
     background: #f5f5f5;
     margin-right: auto;
     border-bottom-left-radius: 5px;
+    color: #2c3e50;
+    line-height: 1.5;
 }
 
 @keyframes messageSlideIn {
@@ -747,6 +1003,656 @@
 .remaining-amount i {
     color: #28a745;
 }
+
+/* Updated Debt Management Styles */
+.debt-management-container {
+    margin-top: 1rem;
+}
+
+.debt-cards-wrapper {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+.debt-card-compact {
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 12px;
+    padding: 1rem;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.debt-card-compact:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.debt-header-compact {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+}
+
+.debt-title-compact {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.debt-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.debt-type {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.5rem;
+}
+
+.debt-balance-compact {
+    text-align: right;
+}
+
+.balance-label {
+    display: block;
+    font-size: 0.7rem;
+    color: #6c757d;
+}
+
+.balance-amount {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.debt-details-compact {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    padding: 0.5rem;
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: 8px;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.detail-label {
+    font-size: 0.7rem;
+    color: #6c757d;
+    margin-bottom: 0.25rem;
+}
+
+.detail-value {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.debt-progress-compact {
+    margin-bottom: 0.75rem;
+}
+
+.progress {
+    height: 4px;
+    margin-bottom: 0.25rem;
+}
+
+.progress-info-compact {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.7rem;
+}
+
+.debt-actions-compact {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+.debt-actions-compact .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+}
+
+.debt-actions-compact .btn i {
+    font-size: 0.8rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .debt-cards-wrapper {
+        grid-template-columns: 1fr;
+    }
+    
+    .debt-details-compact {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* Updated Budget Tips Styles */
+.tips-carousel-container {
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 0.75rem;
+    min-height: 160px;
+}
+
+.tip-card-compact {
+    transition: all 0.3s ease;
+    opacity: 0;
+    position: absolute;
+    width: 100%;
+    transform: translateX(100%);
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 10px;
+    padding: 1rem;
+    display: flex;
+    gap: 1rem;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.tip-card-compact.active {
+    opacity: 1;
+    position: relative;
+    transform: translateX(0);
+}
+
+.tip-card-compact:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.tip-icon-wrapper {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.tip-icon-wrapper.savings {
+    background: rgba(40, 167, 69, 0.1);
+    color: #28a745;
+}
+
+.tip-icon-wrapper.spending {
+    background: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+}
+
+.tip-icon-wrapper.investment {
+    background: rgba(0, 123, 255, 0.1);
+    color: #007bff;
+}
+
+.tip-icon-wrapper.success {
+    background: rgba(40, 167, 69, 0.1);
+    color: #28a745;
+}
+
+.tip-content-compact {
+    flex: 1;
+}
+
+.tip-header-compact {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.tip-category-badge {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 20px;
+    font-weight: 500;
+}
+
+.tip-category-badge.savings {
+    background: rgba(40, 167, 69, 0.1);
+    color: #28a745;
+}
+
+.tip-category-badge.spending {
+    background: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+}
+
+.tip-category-badge.investment {
+    background: rgba(0, 123, 255, 0.1);
+    color: #007bff;
+}
+
+.tip-date {
+    font-size: 0.7rem;
+    color: #6c757d;
+}
+
+.tip-message-compact {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #2c3e50;
+    line-height: 1.4;
+}
+
+.tip-suggestion-compact {
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    background: rgba(255, 193, 7, 0.1);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: #856404;
+}
+
+.tip-suggestion-compact i {
+    color: #ffc107;
+    font-size: 0.9rem;
+}
+
+.carousel-controls-compact {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+}
+
+.carousel-controls-compact .btn-icon {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.05);
+    color: #6c757d;
+    transition: all 0.3s ease;
+}
+
+.carousel-controls-compact .btn-icon:hover {
+    background: rgba(0, 0, 0, 0.1);
+    transform: scale(1.1);
+}
+
+.tip-counter {
+    font-size: 0.8rem;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .tip-card-compact {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .tip-icon-wrapper {
+        align-self: flex-start;
+    }
+}
+
+/* Modern Savings Advice Styles */
+.savings-advice-header {
+    position: relative;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.pulse-icon {
+    color: #ffc107;
+    font-size: 1.5rem;
+    animation: pulse 2s infinite;
+}
+
+.header-decoration {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, #00b4db, #0083b0);
+    border-radius: 2px;
+}
+
+.savings-advice-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    padding: 0.5rem;
+}
+
+.advice-card {
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 16px;
+    padding: 1.5rem;
+    display: flex;
+    gap: 1.5rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.advice-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.advice-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.advice-card:hover::before {
+    opacity: 1;
+}
+
+.advice-icon-wrapper {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+}
+
+.advice-card.high .advice-icon-wrapper {
+    background: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+}
+
+.advice-card.medium .advice-icon-wrapper {
+    background: rgba(255, 193, 7, 0.1);
+    color: #ffc107;
+}
+
+.advice-card.low .advice-icon-wrapper {
+    background: rgba(40, 167, 69, 0.1);
+    color: #28a745;
+}
+
+.advice-card.success .advice-icon-wrapper {
+    background: rgba(40, 167, 69, 0.1);
+    color: #28a745;
+}
+
+.advice-content {
+    flex: 1;
+}
+
+.advice-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.priority-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-weight: 500;
+}
+
+.priority-badge.high {
+    background: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+}
+
+.priority-badge.medium {
+    background: rgba(255, 193, 7, 0.1);
+    color: #ffc107;
+}
+
+.priority-badge.low {
+    background: rgba(40, 167, 69, 0.1);
+    color: #28a745;
+}
+
+.advice-date {
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+.advice-message {
+    margin: 0;
+    font-size: 1rem;
+    color: #2c3e50;
+    line-height: 1.6;
+}
+
+.advice-suggestion {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.suggestion-icon {
+    color: #ffc107;
+    font-size: 1rem;
+}
+
+.advice-suggestion span {
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .savings-advice-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .advice-card {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .advice-icon-wrapper {
+        align-self: flex-start;
+    }
+}
+
+/* Add these styles to your existing CSS */
+.spending-warning-console {
+    margin-top: 1rem;
+    background: rgba(0, 0, 0, 0.03);
+    border-radius: 8px;
+    overflow: hidden;
+    font-family: 'Consolas', monospace;
+}
+
+.console-header {
+    background: rgba(0, 0, 0, 0.05);
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    color: #2c3e50;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+}
+
+.console-body {
+    padding: 1rem;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: #2c3e50;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.warning-entry {
+    margin-bottom: 0.75rem;
+    padding-left: 1rem;
+    border-left: 3px solid;
+    animation: fadeIn 0.3s ease-in;
+}
+
+.warning-entry.high {
+    border-left-color: #dc3545;
+}
+
+.warning-entry.medium {
+    border-left-color: #ffc107;
+}
+
+.warning-entry.low {
+    border-left-color: #28a745;
+}
+
+.warning-entry:last-child {
+    margin-bottom: 0;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Add these styles for the forecast section */
+.forecast-insights {
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 8px;
+    padding: 1rem;
+    height: 100%;
+}
+
+.insights-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.insight-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.insight-item:hover {
+    transform: translateX(5px);
+    background: rgba(255, 255, 255, 0.8);
+}
+
+.insight-icon {
+    color: #00b4db;
+    font-size: 1.2rem;
+    transition: all 0.3s ease;
+}
+
+.insight-item:hover .insight-icon {
+    transform: scale(1.2);
+}
+
+.insight-item p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #2c3e50;
+    line-height: 1.4;
+}
+
+/* Add suggested questions */
+.ai-chat-suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 10px 15px;
+    padding-bottom: 10px;
+    max-height: 80px;
+    overflow-y: auto;
+}
+
+.suggestion-chip {
+    background: rgba(0, 180, 219, 0.1);
+    color: #00b4db;
+    padding: 6px 12px;
+    border-radius: 16px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(0, 180, 219, 0.2);
+    white-space: nowrap;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.suggestion-chip:hover {
+    background: rgba(0, 180, 219, 0.2);
+    transform: translateY(-2px);
+}
+
+/* Add scrollbar styling for suggestions */
+.ai-chat-suggestions::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.ai-chat-suggestions::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 3px;
+}
+
+.ai-chat-suggestions::-webkit-scrollbar-thumb {
+    background: rgba(0, 180, 219, 0.3);
+    border-radius: 3px;
+}
+
+.ai-chat-suggestions::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 180, 219, 0.5);
+}
 </style>
 
 <!-- Load Chart.js before your script -->
@@ -757,6 +1663,141 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize Bootstrap modal
     const fullscreenModal = new bootstrap.Modal(document.getElementById('fullscreenChartModal'));
+    
+    // AI Assistant Functions
+    window.toggleAIChat = function() {
+        const modal = document.getElementById('aiChatModal');
+        if (modal.style.display === 'block') {
+            modal.style.display = 'none';
+        } else {
+            modal.style.display = 'block';
+            modal.classList.add('show');
+            
+            // Add welcome message if chat is empty
+            const chatBody = document.getElementById('aiChatBody');
+            if (chatBody.children.length === 0) {
+                const welcomeMessage = document.createElement('div');
+                welcomeMessage.className = 'chat-message ai-message';
+                welcomeMessage.textContent = `Hello {{ user.username }}! 👋 I'm your AI financial assistant. How can I help you today?`;
+                chatBody.appendChild(welcomeMessage);
+            }
+        }
+    };
+
+    window.sendAIQuery = function() {
+        const queryInput = document.getElementById('aiQuery');
+        const query = queryInput.value.trim();
+        if (!query) return;
+
+        // Add user message to chat
+        const chatBody = document.getElementById('aiChatBody');
+        const userMessage = document.createElement('div');
+        userMessage.className = 'chat-message user-message';
+        userMessage.textContent = query;
+        chatBody.appendChild(userMessage);
+
+        // Clear input
+        queryInput.value = '';
+
+        // Send query to backend
+        fetch('/ai_query', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ query: query })
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Add AI response to chat
+            const aiMessage = document.createElement('div');
+            aiMessage.className = 'chat-message ai-message';
+            aiMessage.textContent = data.response;
+            chatBody.appendChild(aiMessage);
+
+            // Scroll to bottom
+            chatBody.scrollTop = chatBody.scrollHeight;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            const errorMessage = document.createElement('div');
+            errorMessage.className = 'chat-message ai-message';
+            errorMessage.textContent = 'Sorry, I encountered an error. Please try again.';
+            chatBody.appendChild(errorMessage);
+        });
+    };
+
+    // Add enter key support for sending messages
+    document.getElementById('aiQuery').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            sendAIQuery();
+        }
+    });
+
+    // Initialize budget tips carousel
+    let currentTipIndex = 0;
+    const tipCards = document.querySelectorAll('.tip-card-compact');
+    
+    function showTip(index) {
+        tipCards.forEach((card, i) => {
+            if (i === index) {
+                card.style.opacity = '1';
+                card.style.position = 'relative';
+                card.style.transform = 'translateX(0)';
+            } else {
+                card.style.opacity = '0';
+                card.style.position = 'absolute';
+                card.style.transform = 'translateX(100%)';
+            }
+        });
+        document.querySelector('.tip-counter').textContent = `${index + 1}/${tipCards.length}`;
+    }
+
+    function nextTip() {
+        currentTipIndex = (currentTipIndex + 1) % tipCards.length;
+        showTip(currentTipIndex);
+    }
+
+    function prevTip() {
+        currentTipIndex = (currentTipIndex - 1 + tipCards.length) % tipCards.length;
+        showTip(currentTipIndex);
+    }
+
+    // Initialize the first tip
+    if (tipCards.length > 0) {
+        showTip(0);
+    }
+
+    // Add touch swipe functionality
+    let touchStartX = 0;
+    let touchEndX = 0;
+    
+    const tipsContainer = document.querySelector('.tips-carousel-container');
+    
+    if (tipsContainer) {
+        tipsContainer.addEventListener('touchstart', e => {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+        
+        tipsContainer.addEventListener('touchend', e => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        });
+        
+        function handleSwipe() {
+            const swipeThreshold = 50;
+            if (touchEndX < touchStartX - swipeThreshold) {
+                nextTip();
+            }
+            if (touchEndX > touchStartX + swipeThreshold) {
+                prevTip();
+            }
+        }
+    }
+
+    // Make the functions globally available
+    window.nextTip = nextTip;
+    window.prevTip = prevTip;
     
     // Get the data from the template
     const dailyData = JSON.parse('{{ daily_data|tojson|safe }}');
@@ -903,112 +1944,496 @@ document.addEventListener('DOMContentLoaded', function() {
                 {
                     icon: 'calculator',
                     message: `Average Daily Expenses: $${avgExpenses.toFixed(2)}`
-                },
-                {
-                    icon: 'piggy-bank',
-                    message: `Net Savings: $${(totalIncome - totalExpenses).toFixed(2)}`
                 }
             ];
             
-            displayInsights(insights);
-        } else {
-            config.options.plugins = {
-                legend: {
-                    position: 'right',
-                    labels: {
-                        font: { size: 16 }
+            // Render new chart
+            const newChart = new Chart(fullscreenCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Income', 'Expenses'],
+                    datasets: [{
+                        label: 'Amount',
+                        data: [totalIncome, totalExpenses],
+                        backgroundColor: ['rgba(40, 167, 69, 0.2)', 'rgba(220, 53, 69, 0.2)'],
+                        borderColor: ['rgba(40, 167, 69, 1)', 'rgba(220, 53, 69, 1)'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'Amount ($)' }
+                        }
                     }
                 }
-            };
+            });
             
-            // Generate insights for category chart
-            const categoryLabels = Object.keys(expenseCategories);
-            const categoryData = Object.values(expenseCategories);
-            
-            const totalSpent = categoryData.reduce((a, b) => a + b, 0);
-            const maxCategory = categoryLabels[categoryData.indexOf(Math.max(...categoryData))];
-            const maxAmount = Math.max(...categoryData);
-            
-            const insights = [
-                {
-                    icon: 'money-bill-wave',
-                    message: `Total Spent: $${totalSpent.toFixed(2)}`
-                },
-                {
-                    icon: 'chart-pie',
-                    message: `Highest Spending: ${maxCategory} ($${maxAmount.toFixed(2)})`
-                },
-                {
-                    icon: 'percentage',
-                    message: `${maxCategory} represents ${((maxAmount/totalSpent)*100).toFixed(1)}% of total spending`
-                }
-            ];
-            
-            displayInsights(insights);
+            // Update insights container
+    insightsContainer.innerHTML = '';
+    insights.forEach(insight => {
+                const insightItem = document.createElement('div');
+                insightItem.className = 'insight-item hover-effect';
+                insightItem.innerHTML = `
+                    <i class="fas fa-${insight.icon} insight-icon"></i>
+                    <p>${insight.message}</p>
+                `;
+                insightsContainer.appendChild(insightItem);
+            });
         }
         
-        // Create new chart in fullscreen modal
-        new Chart(fullscreenCtx, config);
-        
-        // Show the modal
+        // Show modal
         fullscreenModal.show();
     };
+
+    // Monthly Trend Chart
+    const monthlyTrendCtx = document.getElementById('monthlyTrendChart').getContext('2d');
+    const monthlyTrendData = {
+        labels: Object.keys({{ spending_analysis.monthly_trend|tojson|safe }}),
+        datasets: [{
+            label: 'Income',
+            data: Object.values({{ spending_analysis.monthly_trend|tojson|safe }}).map(m => m.income),
+            borderColor: 'rgb(75, 192, 192)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            tension: 0.4,
+            fill: true
+        }, {
+            label: 'Expenses',
+            data: Object.values({{ spending_analysis.monthly_trend|tojson|safe }}).map(m => m.expenses),
+            borderColor: 'rgb(255, 99, 132)',
+            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+            tension: 0.4,
+            fill: true
+        }]
+    };
+
+    new Chart(monthlyTrendCtx, {
+        type: 'line',
+        data: monthlyTrendData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Monthly Income vs Expenses'
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Amount ($)'
+                    }
+                }
+            }
+        }
+    });
+
+    // Category Trend Chart
+    const categoryTrendCtx = document.getElementById('categoryTrendChart').getContext('2d');
+    const categoryTrends = {{ spending_analysis.category_trends|tojson|safe }};
+    const months = Object.keys({{ spending_analysis.monthly_trend|tojson|safe }});
+    
+    // Create datasets for each category
+    const datasets = Object.entries(categoryTrends).map(([category, values], index) => ({
+        label: category,
+        data: values,
+        borderColor: `hsl(${index * 360 / Object.keys(categoryTrends).length}, 70%, 50%)`,
+        backgroundColor: `hsla(${index * 360 / Object.keys(categoryTrends).length}, 70%, 50%, 0.2)`,
+        fill: true,
+        tension: 0.4
+    }));
+
+    new Chart(categoryTrendCtx, {
+        type: 'line',
+        data: {
+            labels: months,
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Monthly Spending by Category'
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Amount ($)'
+                    }
+                }
+            },
+            interaction: {
+                mode: 'nearest',
+                axis: 'x',
+                intersect: false
+            }
+        }
+    });
+
+    // Add this before your existing JavaScript code
+    function generateForecast() {
+        const monthlyData = JSON.parse('{{ spending_analysis.monthly_trend|tojson|safe }}');
+        const categoryData = JSON.parse('{{ spending_analysis.category_trends|tojson|safe }}');
+        
+        // Get historical data
+        const months = Object.keys(monthlyData);
+        const expenses = months.map(m => monthlyData[m].expenses);
+        
+        // Calculate moving average
+        const movingAverage = (data, window) => {
+            const result = [];
+            for (let i = 0; i < data.length; i++) {
+                const start = Math.max(0, i - window + 1);
+                const values = data.slice(start, i + 1);
+                result.push(values.reduce((a, b) => a + b, 0) / values.length);
+            }
+            return result;
+        };
+
+        // Generate forecast for next 3 months
+        const forecastMonths = [];
+        const forecastValues = [];
+        const lastDate = new Date(months[months.length - 1]);
+        
+        // Calculate trend
+        const trend = expenses[expenses.length - 1] - expenses[0];
+        const monthlyTrend = trend / (expenses.length - 1);
+        
+        // Generate forecast
+        for (let i = 1; i <= 3; i++) {
+            const nextDate = new Date(lastDate);
+            nextDate.setMonth(lastDate.getMonth() + i);
+            forecastMonths.push(nextDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }));
+            
+            // Use moving average and trend for prediction
+            const lastMovingAvg = movingAverage(expenses, 3)[expenses.length - 1];
+            const predictedValue = lastMovingAvg + (monthlyTrend * i);
+            forecastValues.push(Math.max(0, predictedValue));
+        }
+
+        // Create chart
+        const ctx = document.getElementById('forecastChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [...months, ...forecastMonths],
+                datasets: [{
+                    label: 'Historical Expenses',
+                    data: [...expenses, ...Array(3).fill(null)],
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    tension: 0.4,
+                    fill: true
+                }, {
+                    label: 'Forecast',
+                    data: [...Array(expenses.length).fill(null), ...forecastValues],
+                    borderColor: 'rgb(255, 99, 132)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderDash: [5, 5],
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: '3-Month Expense Forecast'
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Amount ($)'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Generate insights
+        const insights = [];
+        const avgExpense = expenses.reduce((a, b) => a + b, 0) / expenses.length;
+        const lastExpense = expenses[expenses.length - 1];
+        const predictedExpense = forecastValues[0];
+        
+        // Trend analysis
+        if (predictedExpense > lastExpense * 1.1) {
+            insights.push({
+                icon: 'arrow-trend-up',
+                message: `Expected increase of ${((predictedExpense - lastExpense) / lastExpense * 100).toFixed(1)}% in next month's expenses`
+            });
+        } else if (predictedExpense < lastExpense * 0.9) {
+            insights.push({
+                icon: 'arrow-trend-down',
+                message: `Expected decrease of ${((lastExpense - predictedExpense) / lastExpense * 100).toFixed(1)}% in next month's expenses`
+            });
+        }
+
+        // Category analysis
+        Object.entries(categoryData).forEach(([category, values]) => {
+            const avg = values.reduce((a, b) => a + b, 0) / values.length;
+            const lastValue = values[values.length - 1];
+            if (lastValue > avg * 1.2) {
+                insights.push({
+                    icon: 'exclamation-triangle',
+                    message: `${category} expenses are trending upward`
+                });
+            }
+        });
+
+        // Display insights
+        const insightsContainer = document.getElementById('forecastInsights');
+        insightsContainer.innerHTML = insights.map(insight => `
+            <div class="insight-item">
+                <i class="fas fa-${insight.icon} insight-icon"></i>
+                <p>${insight.message}</p>
+            </div>
+        `).join('');
+    }
+
+    // Add forecast generation to page load
+    generateForecast();
+
+    // Add suggested questions
+    const suggestions = [
+        "How am I doing with my spending?",
+        "What's my savings progress?",
+        "How are my budgets looking?",
+        "Tell me about my debts"
+    ];
+
+    const suggestionsContainer = document.createElement('div');
+    suggestionsContainer.className = 'ai-chat-suggestions';
+    suggestions.forEach(suggestion => {
+        const chip = document.createElement('div');
+        chip.className = 'suggestion-chip';
+        chip.textContent = suggestion;
+        chip.onclick = () => {
+            document.getElementById('aiQuery').value = suggestion;
+            sendAIQuery();
+        };
+        suggestionsContainer.appendChild(chip);
+    });
+    document.querySelector('.ai-chat-input').parentNode.insertBefore(
+        suggestionsContainer,
+        document.querySelector('.ai-chat-input')
+    );
 });
 
-function displayInsights(insights) {
-    const insightsContainer = document.getElementById('chartInsights');
-    insightsContainer.innerHTML = '';
+function toggleMoreWarnings() {
+    const moreWarnings = document.getElementById('moreWarnings');
+    const showMoreBtn = document.querySelector('.warning-item.show-more');
     
-    insights.forEach(insight => {
-        const insightDiv = document.createElement('div');
-        insightDiv.className = 'insight-item hover-effect mb-3';
-        insightDiv.innerHTML = `
-            <i class="fas fa-${insight.icon} insight-icon me-2"></i>
-            <p class="mb-0">${insight.message}</p>
+    if (moreWarnings.style.display === 'none') {
+        moreWarnings.style.display = 'flex';
+        showMoreBtn.querySelector('.warning-icon').classList.remove('fa-chevron-down');
+        showMoreBtn.querySelector('.warning-icon').classList.add('fa-chevron-up');
+        showMoreBtn.querySelector('.warning-text').textContent = 'Show less warnings';
+    } else {
+        moreWarnings.style.display = 'none';
+        showMoreBtn.querySelector('.warning-icon').classList.remove('fa-chevron-up');
+        showMoreBtn.querySelector('.warning-icon').classList.add('fa-chevron-down');
+        showMoreBtn.querySelector('.warning-text').textContent = 'Show more warnings';
+    }
+}
+
+let currentTipIndex = 0;
+const tipCards = document.querySelectorAll('.tip-card');
+const debtCards = document.querySelectorAll('.debt-card');
+
+function showTip(index) {
+    tipCards.forEach((card, i) => {
+        card.classList.remove('active');
+        if (i === index) {
+            card.classList.add('active');
+        }
+    });
+    document.querySelector('.tip-counter').textContent = `${index + 1}/${tipCards.length}`;
+}
+
+function nextTip() {
+    currentTipIndex = (currentTipIndex + 1) % tipCards.length;
+    showTip(currentTipIndex);
+}
+
+function prevTip() {
+    currentTipIndex = (currentTipIndex - 1 + tipCards.length) % tipCards.length;
+    showTip(currentTipIndex);
+}
+
+// Initialize the first tip
+document.addEventListener('DOMContentLoaded', function() {
+    if (tipCards.length > 0) {
+        showTip(0);
+    }
+    
+    // Add touch swipe functionality
+    let touchStartX = 0;
+    let touchEndX = 0;
+    
+    const tipsContainer = document.querySelector('.tips-carousel-container');
+    
+    tipsContainer.addEventListener('touchstart', e => {
+        touchStartX = e.changedTouches[0].screenX;
+    });
+    
+    tipsContainer.addEventListener('touchend', e => {
+        touchEndX = e.changedTouches[0].screenX;
+        handleSwipe();
+    });
+    
+    function handleSwipe() {
+        const swipeThreshold = 50;
+        if (touchEndX < touchStartX - swipeThreshold) {
+            nextTip();
+        }
+        if (touchEndX > touchStartX + swipeThreshold) {
+            prevTip();
+        }
+    }
+});
+
+function makePayment(debtId) {
+    // Implement payment functionality
+    console.log('Making payment for debt:', debtId);
+}
+
+function viewHistory(debtId) {
+    // Implement history view functionality
+    console.log('Viewing history for debt:', debtId);
+}
+
+// Initialize tooltips and other Bootstrap components
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // Add hover effects to debt cards
+    const debtCards = document.querySelectorAll('.debt-card');
+    debtCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+});
+
+// Add keyboard navigation for accessibility
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        // Close all expanded debt contents when Escape is pressed
+        document.querySelectorAll('.debt-content.show').forEach(content => {
+            content.classList.remove('show');
+            content.closest('.debt-card').querySelector('.fa-chevron-up')?.classList.replace('fa-chevron-up', 'fa-chevron-down');
+        });
+    }
+});
+
+// Add this before your existing JavaScript code
+function analyzeSpendingData() {
+    const monthlyData = JSON.parse('{{ spending_analysis.monthly_trend|tojson|safe }}');
+    const categoryData = JSON.parse('{{ spending_analysis.category_trends|tojson|safe }}');
+    const warnings = [];
+    
+    // Analyze monthly trends
+    const months = Object.keys(monthlyData);
+    const expenses = months.map(m => monthlyData[m].expenses);
+    const avgExpense = expenses.reduce((a, b) => a + b, 0) / expenses.length;
+    const lastMonthExpense = expenses[expenses.length - 1];
+    
+    // Check for significant spending increase
+    if (lastMonthExpense > avgExpense * 1.2) {
+        warnings.push({
+            level: 'high',
+            message: `⚠️ High spending alert: Last month's expenses ($${lastMonthExpense.toFixed(2)}) are 20% above average ($${avgExpense.toFixed(2)})`
+        });
+    }
+    
+    // Analyze category trends
+    const categories = Object.keys(categoryData);
+    categories.forEach(category => {
+        const values = categoryData[category];
+        const avg = values.reduce((a, b) => a + b, 0) / values.length;
+        const lastValue = values[values.length - 1];
+        
+        if (lastValue > avg * 1.5) {
+            warnings.push({
+                level: 'medium',
+                message: `📊 ${category} spending increased by 50% compared to average`
+            });
+        }
+    });
+    
+    // Check for budget status
+    const totalIncome = months.reduce((sum, m) => sum + monthlyData[m].income, 0);
+    const totalExpenses = months.reduce((sum, m) => sum + monthlyData[m].expenses, 0);
+    const savingsRate = (totalIncome - totalExpenses) / totalIncome;
+    
+    if (savingsRate < 0.1) {
+        warnings.push({
+            level: 'high',
+            message: `💰 Low savings rate: Only ${(savingsRate * 100).toFixed(1)}% of income is being saved`
+        });
+    }
+    
+    // Display warnings
+    const warningsContainer = document.getElementById('spendingWarnings');
+    if (warnings.length > 0) {
+        warningsContainer.innerHTML = warnings
+            .sort((a, b) => a.level === 'high' ? -1 : 1)
+            .slice(0, 3) // Show only top 3 most important warnings
+            .map(warning => `
+                <div class="warning-entry ${warning.level}">
+                    ${warning.message}
+                </div>
+            `).join('');
+    } else {
+        warningsContainer.innerHTML = `
+            <div class="warning-entry low">
+                <i class="fas fa-check-circle me-2"></i>Your spending patterns look healthy!
+            </div>
         `;
-        insightsContainer.appendChild(insightDiv);
-    });
+    }
 }
 
-// AI Chat functionality
-function toggleAIChat() {
-    const modal = document.getElementById('aiChatModal');
-    modal.classList.toggle('show');
-}
-
-function sendAIQuery() {
-    const query = document.getElementById('aiQuery').value;
-    if (!query) return;
-
-    // Add user message to chat
-    addMessage('user', query);
-    document.getElementById('aiQuery').value = '';
-
-    // Send query to backend
-    fetch('/ai_query', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ query: query })
-    })
-    .then(response => response.json())
-    .then(data => {
-        addMessage('assistant', data.response);
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        addMessage('assistant', 'Sorry, I encountered an error. Please try again.');
-    });
-}
-
-function addMessage(type, content) {
-    const chatBody = document.getElementById('aiChatBody');
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `message ${type}-message`;
-    messageDiv.innerHTML = `<p>${content}</p>`;
-    chatBody.appendChild(messageDiv);
-    chatBody.scrollTop = chatBody.scrollHeight;
-}
+// Call the analysis when the page loads
+document.addEventListener('DOMContentLoaded', function() {
+    analyzeSpendingData();
+    // ... rest of your existing DOMContentLoaded code ...
+});
 </script>
 {% endblock %}

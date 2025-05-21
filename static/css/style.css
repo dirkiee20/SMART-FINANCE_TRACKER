@@ -23,7 +23,7 @@
     height: 2px;
     bottom: 0;
     left: 0;
-    background-color: #fff;
+    background-color: #333;
     transition: width 0.3s ease;
 }
 
@@ -38,4 +38,45 @@
 
 .active-link::after {
     width: 100%;
+}
+
+/* Settings Navigation Styles */
+.settings-container .settings-nav .nav-link {
+    color: #333 !important;
+    padding: 1rem;
+    border-radius: 0;
+    transition: all 0.3s ease;
+    margin: 0;
+    transform: none;
+}
+
+.settings-container .settings-nav .nav-link:hover {
+    color: #1e3c72 !important;
+    background-color: rgba(30, 60, 114, 0.1);
+    transform: none;
+}
+
+.settings-container .settings-nav .nav-link.active {
+    color: #1e3c72 !important;
+    background-color: rgba(30, 60, 114, 0.1);
+    font-weight: 600;
+}
+
+.settings-container .settings-nav .nav-link::after {
+    display: none;
+}
+
+/* Settings Card Styles */
+.settings-container .card-title {
+    color: #333;
+    margin-bottom: 1.5rem;
+}
+
+.settings-container .form-label {
+    color: #333;
+    font-weight: 500;
+}
+
+.settings-container .text-muted {
+    color: #666 !important;
 }
